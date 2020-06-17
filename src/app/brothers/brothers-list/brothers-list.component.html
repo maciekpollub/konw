@@ -1,0 +1,27 @@
+<div *ngIf="participants" class="table-responsive-lg">
+  <table class="table table-hover table-bordered" >
+    <thead>
+      <th scope="col">#</th>
+      <th scope="col">Skąd</th>
+      <th scope="col">Kto</th>
+      <!-- <th scope="col">Przydział</th>
+      <th scope="col">Gdzie</th>
+      <th scope="col">Ks</th>
+      <th scope="col">Mał</th>
+      <th scope="col">Kob</th>
+      <th scope="col">Męż</th>
+      <th scope="col">d</th>
+      <th scope="col">D</th>
+      <th scope="col">N.os</th>
+      <th scope="col">Wiek</th>
+      <th scope="col">Tr</th> -->
+    </thead>
+    <tbody>
+      <tr *ngFor="let participant of participants; let i = index">
+        <th scope="row">{{i}}</th>
+        <td>{{participant.communityName}}</td>
+        <td>{{participant.participantName}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
