@@ -19,7 +19,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let el of (elements$ | async); let i = index">
+        <tr *ngFor="let el of (elements$ | async); let i = index" (click)="onBrotherClick(i)">
           <th scope="row">{{i+1}}</th>
           <td>{{el.communityName}}</td>
           <td>{{el.participantName}}</td>

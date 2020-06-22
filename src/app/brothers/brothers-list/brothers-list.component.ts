@@ -35,7 +35,7 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
   }
 
   onBrotherClick(id: number) {
-    this.router.navigate([id], {relativeTo: this.activatedRoute})
+    this.router.navigate(['/brothers', id])
   }
 
   onBackClick() {

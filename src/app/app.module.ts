@@ -10,6 +10,7 @@ import { HeaderComponent } from './header/header.component';
 import { NoFileChosenComponent } from './brothers/no-file-chosen/no-file-chosen.component';
 import { BrotherComponent } from './brothers/brothers-list/brother/brother.component';
 import { MDBBootstrapModule } from 'angular-bootstrap-md';
+import { ReactiveFormsModule } from '@angular/forms';
 
 
 @NgModule({
@@ -24,7 +25,8 @@ import { MDBBootstrapModule } from 'angular-bootstrap-md';
     BrowserModule,
     AppRoutingModule,
     StoreModule.forRoot({brothers_: fromBrothers.brothersReducer}),
-    MDBBootstrapModule.forRoot()
+    MDBBootstrapModule.forRoot(), 
+    ReactiveFormsModule,
   ],
   providers: [ExcelService],
   bootstrap: [AppComponent]

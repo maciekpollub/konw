@@ -9,9 +9,11 @@ const routes: Routes = [
   {path: '', redirectTo: '/no-file-chosen', pathMatch: 'full'},
   {path: 'no-file-chosen', component: NoFileChosenComponent},
   {path: 'brothers', component: BrothersListComponent,
-    children: [
-      {path: ':id', component: BrotherComponent}
-    ]},
+    // children: [
+    //   {path: ':id', component: BrotherComponent}
+    // ]
+  },
+  {path: 'brothers/:id', component: BrotherComponent}
 ];
 
 @NgModule({
