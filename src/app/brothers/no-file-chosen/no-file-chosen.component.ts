@@ -40,7 +40,7 @@ export class NoFileChosenComponent implements OnInit {
       const bstr: string = e.target.result;
       const data = this.excelService.importFromFile(bstr);
 
-      const header: string[] = Object.getOwnPropertyNames(new Participant('','','', '', false, '', '', '', '', '', '', '', '', '', '', '', '')); 
+      const header: string[] = Object.getOwnPropertyNames(new Participant('','','','','','','', '', '', '', '', '', '')); 
       const importedData = (data as Array<any>).slice();
       const data$ = of(importedData)
 

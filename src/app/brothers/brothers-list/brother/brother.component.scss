@@ -1,11 +1,21 @@
-.form-container {
-  display: flex;
-  justify-content: center;
-  form {
-    width: 800px;
-    
+.brother-container {
+  .brother-header {
+    padding: 15px 0;
+    display: flex;
+    justify-content: space-between;
+    button {
+      display: inline-block;
+    }
   }
-  .row {
-   /* justify-content: center;*/
+  
+  .form-container {
+    display: flex;
+    justify-content: center;
+    form {
+      width: 800px;
+      label {
+        font-weight: bold;
+      }
+    }
   }
 }

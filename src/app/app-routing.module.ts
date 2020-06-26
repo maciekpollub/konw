@@ -6,14 +6,14 @@ import { BrothersListComponent } from './brothers/brothers-list/brothers-list.co
 
 
 const routes: Routes = [
-  {path: '', redirectTo: '/no-file-chosen', pathMatch: 'full'},
-  {path: 'no-file-chosen', component: NoFileChosenComponent},
+  {path: '', redirectTo: 'brothers', pathMatch: 'full'},
   {path: 'brothers', component: BrothersListComponent,
     // children: [
     //   {path: ':id', component: BrotherComponent}
     // ]
   },
-  {path: 'brothers/:id', component: BrotherComponent}
+  {path: 'brothers/:id', component: BrotherComponent},
+  {path: 'brothers/:new', component: BrotherComponent},
 ];
 
 @NgModule({

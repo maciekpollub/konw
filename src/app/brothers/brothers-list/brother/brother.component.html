@@ -1,109 +1,150 @@
-<hr>
-<h3 *ngIf="(brother$ | async)">{{(brother$ | async).participantName}}</h3>
-<hr>
-<div class="form-container">
-  <form [formGroup]="pForm" (ngSubmit)="onSubmit()"> 
-    <div class="row">
-      <div class="col-6">
-        <div class="form-group">
-          <label for="commName">Wspólnota</label>
-          <input type="text" id="commName" formControlName="communityName" class="form-control">
+<div class="brother-container" *ngIf="(brother$ | async) || editMode === false">
+  <div class="brother-header">
+    <h3 *ngIf="editMode === true; else brotherHeaderForNonEditMode">{{(brother$ | async).imieINazwisko}}</h3>
+    <ng-template #brotherHeaderForNonEditMode>
+      <h3>Wpisz dane nowego uczestnika</h3>
+    </ng-template>
+    <button class="btn btn-primary" type="button" (click)="onBackToList()">Wróć do listy</button>
+  </div>
+  <div class="form-container">
+    <form [formGroup]="pForm" (ngSubmit)="onSubmit()"> 
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label for="commName">Wspólnota</label>
+            <input type="text" id="commName" formControlName="wspolnota" class="form-control">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label for="partName">Imię i Nazwisko</label>
+            <input type="text" id="partName" formControlName="imieINazwisko" class="form-control">
+          </div>
         </div>
       </div>
-      <div class="col-6">
-        <div class="form-group">
-          <label for="partName">Imię i Nazwisko</label>
-          <input type="text" id="partName" formControlName="participantName" class="form-control">
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label for="allocation">Zakwaterowanie</label>
+            <select type="text" id="allocation" formControlName="kwatera" class="form-control">
+              <option 
+                *ngFor="let accommodation of (accommodations$ | async)"
+                value="accommodation.kwatera"  
+              >{{accommodation.kwatera}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-2">
+          <!-- <div class="form-group">
+            <label for="allocated">...dokonane</label>
+            <select *ngIf="editMode === true; else allocatedSelectForNonEditMode " name="allocated" id="allocated" class="form-control">
+              <option value="Tak" [selected]="(brother$ | async).allocated" >Tak</option>
+              <option value="Nie" [selected]="!(brother$ | async).allocated">Nie</option>
+            </select>
+            <ng-template #allocatedSelectForNonEditMode>
+              <select name="allocated" id="allocated" class="form-control">
+                <option value="Tak">Tak</option>
+                <option value="Nie" selected>Nie</option>
+              </select>
+            </ng-template>
+          </div> -->
+        </div>
+        <!-- <div class="col-2">
+          <div class="form-group">
+            <label for="no">Nr</label>
+            <input type="number" id="no" class="form-control" formControlName="id">
+          </div>
+        </div> -->
+        <div class="col-2">
+          <div class="form-group">
+            <label for="p">P</label>
+            <input type="number" id="p" class="form-control" formControlName="p">
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row">
-      <div class="col-12">
-        <div class="form-group">
-          <label for="allocation">Zakwaterowanie</label>
-          <input type="text" id="allocation" formControlName="allocation" class="form-control">
+      <div class="row">
+        <div class="col-3">
+          <div class="form-group">
+            <label for="presbQty">Prezbiter#</label>
+            <input type="number" id="presQty" formControlName="prezbiter" class="form-control">
+          </div>
         </div>
       </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="col-3">
-        <div class="form-group">
-          <label for="presbQty">Prezbiter#</label>
-          <input type="number" id="presQty" formControlName="presbiterQuantity" class="form-control">
+      <div class="row">
+        <div class="col-3">
+          <div class="form-group">
+            <label for="womQty">Kobieta#</label>
+            <input type="number" id="womQty" formControlName="kobieta" class="form-control">
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="form-group">
+            <label for="manQty">Mężczyzna#</label>
+            <input type="number" id="manQty" formControlName="mezczyzna" class="form-control">
+          </div>
         </div>
       </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="col-3">
-        <div class="form-group">
-          <label for="womQty">Kobieta#</label>
-          <input type="number" id="womQty" formControlName="womanQuantity" class="form-control">
+      <div class="row">
+        <div class="col-3">
+          <div class="form-group">
+            <label for="marQty">Małżeństwo#</label>
+            <input type="number" id="marQty" formControlName="malzenstwo" class="form-control">
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="form-group">
+            <label for="litlChldQty">Bobas#</label>
+            <input type="number" id="litlChldQty" formControlName="bobas" class="form-control">
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="form-group">
+            <label for="oldChldQty">Dziecko#</label>
+            <input type="number" id="oldChldQty" formControlName="dziecko" class="form-control">
+          </div>
         </div>
       </div>
-      <div class="col-3">
-        <div class="form-group">
-          <label for="manQty">Mężczyzna#</label>
-          <input type="number" id="manQty" formControlName="manQuantity" class="form-control">
+      <div class="row">
+        <!-- <div class="col-3">
+          <div class="form-group">
+            <label for="famNanQty">Niania z rodziny#</label>
+            <input type="number" id="famNanQty" formControlName="familyNannyQuantity" class="form-control">
+          </div>
+        </div> -->
+        <div class="col-3">
+          <div class="form-group">
+            <label for="sepNanQty">Niania oddzielna#</label>
+            <input type="number" id="sepNanQty" formControlName="nianiaOddzielnie" class="form-control">
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="form-group">
+            <label for="age">Wiek#</label>
+            <input type="number" id="age" formControlName="wiek" class="form-control">
+          </div>
         </div>
       </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="col-3">
-        <div class="form-group">
-          <label for="marQty">Małżeństwo#</label>
-          <input type="number" id="marQty" formControlName="marriageQuantity" class="form-control">
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label for="meansOfT">Własny środek transportu</label>
+            <input type="text" id="meansOfT" formControlName="srodekTransportu" class="form-control">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label for="remarks">Uwagi</label>
+            <textarea rows="2" id="remars" formControlName="uwagi" class="form-control"></textarea>
+          </div>
         </div>
       </div>
-      <div class="col-3">
-        <div class="form-group">
-          <label for="litlChldQty">Bobas#</label>
-          <input type="number" id="litlChldQty" formControlName="littleChildQuantity" class="form-control">
+      <div class="row justify-content-center">
+        <div class="col-8">
+          <button class="btn btn-success" type="submit" style="width: 100%;">Zapisz</button>
         </div>
       </div>
-      <div class="col-3">
-        <div class="form-group">
-          <label for="oldChldQty">Dziecko#</label>
-          <input type="number" id="oldChldQty" formControlName="olderChildQuantity" class="form-control">
-        </div>
-      </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="col-3">
-        <div class="form-group">
-          <label for="famNanQty">Niania z rodziny#</label>
-          <input type="number" id="famNanQty" formControlName="familyNannyQuantity" class="form-control">
-        </div>
-      </div>
-      <div class="col-3">
-        <div class="form-group">
-          <label for="sepNanQty">Niania oddzielna#</label>
-          <input type="number" id="sepNanQty" formControlName="separateNannyQuantity" class="form-control">
-        </div>
-      </div>
-      <div class="col-3">
-        <div class="form-group">
-          <label for="age">Wiek#</label>
-          <input type="number" id="age" formControlName="age" class="form-control">
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <div class="form-group">
-          <label for="meansOfT">Własny środek transportu</label>
-          <input type="text" id="meansOfT" formControlName="meansOfTransport" class="form-control">
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-12 submit" style="display: flex; justify-content: center;">
-        <button class="btn btn-success" type="submit" style="width: 300px;">Zapisz</button>
-      </div>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>
+
   

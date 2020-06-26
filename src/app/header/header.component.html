@@ -13,15 +13,15 @@
   </button>
   <div class="collapse navbar-collapse" id="navbarNav">
     <ul class="navbar-nav">
-      <li class="nav-item active">
-        <a class="nav-link" href="#">Lista_Braci <span class="sr-only">(current)</span></a>
+      <li class="nav-item" >
+        <a class="nav-link active" [routerLink]="['/brothers']" routerLinkActive="active">Lista_Braci <span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="#">Kwatery_Buzuna</a>
+        <a class="nav-link" [routerLink]="['/no-file-chosen']" routerLinkActive="active">Kwatery_Buzuna</a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#">Inne_kwatery</a>
-      </li>
+      <!-- <li class="nav-item" >
+        <a class="nav-link" [routerLink]="['error']" routerLinkActive="active">Inne_kwatery</a>
+      </li> -->
     </ul>
   </div>
 </nav>

@@ -1,7 +1,10 @@
 <div class="brothers-list-container">
   <div style="display: flex; justify-content: space-between; align-items: baseline;">
     <h4>Uczestnicy Konwiwencji Regionalnej 2020</h4>
-    <button class="btn btn-success" (click)="onBackClick()">Back</button>
+    <button class="btn btn-success" type="button" (click)="onBackClick()">Back</button>
+    <span *ngIf="(elements$ | async)">
+      <button class="btn btn-primary" type="button" (click)="onAddParticipant()">Dodaj Uczestnika</button>
+    </span>
   </div>
   
   
@@ -12,18 +15,26 @@
       maxHeight="600" 
       bordered="true"
       hover="true"
+      class="z-depth-1"
+      id="participantsTable"
       >
       <thead class="indigo white-text">
         <tr>
-          <th *ngFor="let head of headElements; let i = index" scope="col"> {{head}}</th>
+          <th 
+            *ngFor="let head of headElements; let i = index" 
+            scope="col"
+            aria-controls="participantsTable"
+            [mdbTableSort]="(elements$ | async)"
+            sortBy="headElements[i]"  
+          > {{head}}</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let el of (elements$ | async); let i = index" (click)="onBrotherClick(i)">
-          <th scope="row">{{i+1}}</th>
-          <td>{{el.communityName}}</td>
-          <td>{{el.participantName}}</td>
-          <td>{{el.allocation}}</td>   
+          <th scope="row">{{el.id}}</th>
+          <td>{{el.wspolnota}}</td>
+          <td>{{el.imieINazwisko}}</td>
+          <td>{{el.kwatera}}</td>   
         </tr>
       </tbody>
     </table>  
