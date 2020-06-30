@@ -1,3 +1,4 @@
+import { Participant } from './../../models/participant.model';
 import { BrothersService } from './../brothers.service';
 import * as BroActions from './brothers.actions'
 
@@ -10,7 +11,7 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
     case BroActions.LOAD_PARTICIPANTS:
       return {
         ...state,
-        participants: [...state.participants, ...action.payload]
+        participants: [...action.payload]
       }
     case BroActions.UPDATE_PARTICIPANT: {
       let participantsCopy = [...state.participants];
@@ -22,24 +23,34 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
       }
     }
     case BroActions.ADD_PARTICIPANT: {
-      const compare = (a, b) => {
-        let commAName = a.communityName.toUpperCase();
-        let commBName = b.communityName.toUpperCase();
-        let comparison = 0;
-        if (commAName > commBName) {
-          comparison = 1;
-        } else if (commAName <= commBName) {
-          comparison = -1;
-        }
-        return comparison;
-      }
+      // const compare = (a, b) => {
+      //   let commAName = a.wspolnota.toUpperCase();
+      //   let commBName = b.wspolnota.toUpperCase();
+      //   let comparison = 0;
+      //   if (commAName > commBName) {
+      //     comparison = +1;
+      //   } else if (commAName <= commBName) {
+      //     comparison = -1;
+      //   }
+      //   return comparison;
+      // }
       let participantsCopy = [...state.participants];
-      let participantsWithAddedOne = [...participantsCopy, action.payload].sort(compare);
+      let participantsWithAddedOne = [...participantsCopy, action.payload]
+      // .sort(compare);
       let participantsSorted = participantsWithAddedOne;
       console.log('posortowane' ,participantsSorted)
       return {
         ...state,
         participants: [...participantsSorted]
+      }
+    }
+    case BroActions.DELETE_PARTICIPANT: {
+      let participantsCopy = [...state.participants];
+      let changedParticipantsCopy = participantsCopy.filter(p => p.id !== action.payload.index);
+      
+      return {
+        ...state,
+        participants: [...changedParticipantsCopy]
       }
     }
       

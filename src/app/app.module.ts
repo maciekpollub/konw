@@ -13,6 +13,7 @@ import { BrotherComponent } from './brothers/brothers-list/brother/brother.compo
 import { MDBBootstrapModule } from 'angular-bootstrap-md';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { AccommodationComponent } from './accommodations/accommodation/accommodation.component';
 
 
 @NgModule({
@@ -22,6 +23,7 @@ import { HttpClientModule } from '@angular/common/http';
     HeaderComponent,
     NoFileChosenComponent,
     BrotherComponent,
+    AccommodationComponent,
   ],
   imports: [
     BrowserModule,

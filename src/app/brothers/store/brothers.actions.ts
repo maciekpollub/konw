@@ -19,4 +19,10 @@ export class AddParticipant implements Action {
   constructor(public payload: Participant) {}
 }
 
-export type BrothersActions = LoadParticipants | UpdateParticipant | AddParticipant;
+export const DELETE_PARTICIPANT = 'DELETE_PARTICIPANT';
+export class DeleteParticipant implements Action {
+  readonly type = DELETE_PARTICIPANT;
+  constructor(public payload: {index: string}) {}
+}
+
+export type BrothersActions = LoadParticipants | UpdateParticipant | AddParticipant | DeleteParticipant;

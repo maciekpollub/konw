@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Accommodation } from './../../../models/accommodation.model';
 import { map, tap } from 'rxjs/operators';
 import { Participant } from './../../../models/participant.model';
@@ -5,7 +6,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { combineLatest, Observable, of, Subscription } from 'rxjs';
+import { combineLatest, Observable, of, Subscription, zip } from 'rxjs';
 import * as BroActions from '../../../brothers/store/brothers.actions'
 
 @Component({
@@ -17,6 +18,8 @@ export class BrotherComponent implements OnInit, OnDestroy {
   editMode = false;
   brother$: Observable<Participant>;
   subscription: Subscription;
+  currentParticipantsQuantity: number;
+  participantsQuantitySubscription: Subscription;
 
   accommodations$: Observable<Accommodation[]>;
 
@@ -25,6 +28,7 @@ export class BrotherComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,
+    private httpClient: HttpClient,
     private store: Store<{
       brothers_: {participants: Participant[]},
       accommodations_: {accommodations: Accommodation[]},
@@ -32,11 +36,15 @@ export class BrotherComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.activatedRoute.params.subscribe((params: Params) => {
-      // this.editMode = params['id'] !== null;
       this.editMode = !isNaN(+params['id']);
     })
     this.accommodations$ = this.store.select('accommodations_')
-    .pipe(map(object => object.accommodations));
+    .pipe(map(object => object.accommodations), tap(d => console.log(d)));
+
+    this.participantsQuantitySubscription = this.store.select('brothers_').subscribe((brothers) => {
+      return this.currentParticipantsQuantity = brothers.participants.length;
+    }
+    )
 
     this.initForm();
   }
@@ -48,7 +56,11 @@ export class BrotherComponent implements OnInit, OnDestroy {
       );
       
       let participants$: Observable<Participant[]> = this.store.select('brothers_')
-      .pipe(map(object => object.participants));
+      .pipe(
+        map(object => {
+          return object.participants;
+        })
+      );
   
       this.brother$ = combineLatest(param$, participants$).pipe(
         map(([param, prtpts]) => {
@@ -103,7 +115,7 @@ export class BrotherComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
-    const newParticipant = new Participant(
+    let newParticipant = new Participant(
       this.pForm.value['id'],
       this.pForm.value['wspolnota'],
       this.pForm.value['imieINazwisko'],
@@ -120,22 +132,32 @@ export class BrotherComponent implements OnInit, OnDestroy {
       this.pForm.value['srodekTransportu'],
       this.pForm.value['p'],
       );
-    this.subscription = this.activatedRoute.params.pipe(
-      map((params: Params) => params['id']),
-      map((id: number) => {
-        return {index: id, newPart: newParticipant}
-      })).subscribe((data) => {
-          if(this.editMode) {
-            this.store.dispatch(new BroActions.UpdateParticipant({ index: data.index, newParticipant: data.newPart}));
-          } else {
-            this.store.dispatch(new BroActions.AddParticipant(data.newPart));
-          }
-          this.router.navigate(['../'], {relativeTo: this.activatedRoute});  
-        });
 
+      if (this.editMode) {
+        this.subscription = this.activatedRoute.params.pipe(
+          map((params: Params) => +params['id']),
+          map((id: number) => {
+            return {index: id, newPart: newParticipant}
+          })).subscribe((data) => {
+            this.store.dispatch(new BroActions.UpdateParticipant({ index: data.index, newParticipant: data.newPart}));
+          });
+          this.router.navigate(['../'], {relativeTo: this.activatedRoute});
+      } else {
+        newParticipant['id'] = (this.currentParticipantsQuantity + 1).toString();
+        this.subscription = this.httpClient.post('http://localhost:3000/listaBraci', newParticipant).subscribe();
+        // let brothersQuantity: number;
+        // this.subscription = this.store.select('brothers_').pipe(
+        //   map(brothers => brothersQuantity = brothers.participants.length)
+        // ).subscribe((data) => {
+        //     newParticipant['id'] = (brothersQuantity + 1).toString();
+        //     this.store.dispatch(new BroActions.AddParticipant(newParticipant))
+        //   })
+        this.router.navigate(['../'], {relativeTo: this.activatedRoute}); 
+      }
   }
 
   ngOnDestroy() {
-    if (this.subscription) {this.subscription.unsubscribe};
+    if (this.subscription) {this.subscription.unsubscribe()};
+    this.participantsQuantitySubscription.unsubscribe();
   }
 }

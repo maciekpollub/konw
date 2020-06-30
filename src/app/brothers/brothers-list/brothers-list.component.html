@@ -10,11 +10,12 @@
   
     <table 
       mdbTable 
+      hover="true"
       mdbTableScroll 
       scrollY="true" 
       maxHeight="600" 
       bordered="true"
-      hover="true"
+      
       class="z-depth-1"
       id="participantsTable"
       >
@@ -31,12 +32,73 @@
       </thead>
       <tbody>
         <tr *ngFor="let el of (elements$ | async); let i = index" (click)="onBrotherClick(i)">
-          <th scope="row">{{el.id}}</th>
+          <th scope="row">{{i+1}}</th>
           <td>{{el.wspolnota}}</td>
-          <td>{{el.imieINazwisko}}</td>
+          <td>
+            <div class="row">
+              <div class="col-10">
+                {{el.imieINazwisko}}
+              </div>
+              <div class="col-2">
+                <a
+                  class="trash" 
+                  (click)="$event.stopPropagation()" 
+                  (click)="deleteParticipantModal.show()"
+                  >
+                  <mdb-icon fas icon="trash" ></mdb-icon>
+                </a>
+                <div
+                  mdbModal 
+                  class="modal" 
+                  #deleteParticipantModal="mdbModal" 
+                  tabindex="-1" 
+                  role="dialog" 
+                  aria-labelledby="deleteParticipantModalLabel"
+                  aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button 
+                        type="button" 
+                        class="close pull-right" 
+                        (click)="$event.stopPropagation()"
+                        (click)="deleteParticipantModal.hide()"
+                        aria-label="Close"><span aria-hidden="true">x</span>
+                      </button>
+                      <h4 class="modal-title w-100" id="deleteParticipantModalLabel">Usuwanie uczestnika</h4>
+                    </div>
+                    <div class="modal-body">Czy na pewno chcesz usunąć uczesnika?</div>
+                    <div class="modal-footer">
+                      <button 
+                        type="button" 
+                        mdbBtn 
+                        color="secondary" 
+                        class="waves-light" 
+                        aria-label="Close"
+                        (click)="$event.stopPropagation()"
+                        (click)="deleteParticipantModal.hide()">Anuluj
+                      </button>
+                      <button 
+                        type="button"
+                        mdbBtn
+                        color="primary" 
+                        class="waves-light"
+                        mdbWavesEffect
+                        (click)="onDeleteParticipant(el.id); false"
+                        >Potwierdź</button>
+                    </div>
+                  </div>
+                </div>
+                </div>
+              </div>
+            
+            </div>
+          </td>
           <td>{{el.kwatera}}</td>   
         </tr>
       </tbody>
     </table>  
 </div>
+
+
 

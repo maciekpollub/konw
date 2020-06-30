@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Participant } from './../../models/participant.model';
+import { Accommodation } from './../../models/accommodation.model';
 import { BrothersService } from './../brothers.service';
 import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { Subscription, Observable, of } from 'rxjs';
@@ -29,13 +30,26 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
     ) { }
 
   ngOnInit(): void {    
-    this.httpClient.get('assets/konwiwencja2018.json').subscribe(
-      (data: any) => {
-        console.log('data:', data);
-        this.store.dispatch(new BroActions.LoadParticipants(data.listaBraci))
-        this.store.dispatch(new AccomActions.LoadAccommodations(data.kwateryBuzuna))
+    // this.httpClient.get('assets/konwiwencja2018.json').subscribe(
+    //   (data: any) => {
+    //     console.log('data:', data);
+    //     this.store.dispatch(new BroActions.LoadParticipants(data.listaBraci))
+    //     this.store.dispatch(new AccomActions.LoadAccommodations(data.kwateryBuzuna))
+    //   }
+    // )
+
+    this.httpClient.get('http://localhost:3000/listaBraci?_sort=wspolnota&_order=asc').subscribe(
+      (data: Participant[]) => {
+        this.store.dispatch(new BroActions.LoadParticipants(data))
       }
     )
+    this.httpClient.get('http://localhost:3000/kwateryBuzuna').subscribe(
+      (data: Accommodation[]) => {
+        this.store.dispatch(new AccomActions.LoadAccommodations(data))
+      }
+    )
+
+
 
     this.elements$ = this.store.select('brothers_').pipe(
       map(pieceOfState => pieceOfState.participants)
@@ -56,6 +70,11 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
 
   onAddParticipant() {
     this.router.navigate(['new'], {relativeTo: this.activatedRoute});
+  }
+
+  onDeleteParticipant(id: string) {
+    this.store.dispatch(new BroActions.DeleteParticipant({index: id}));
+    this.httpClient.delete('http://localhost:3000/listaBraci/' + id).subscribe();
   }
 
 }
