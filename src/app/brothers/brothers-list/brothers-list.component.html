@@ -15,10 +15,9 @@
       scrollY="true" 
       maxHeight="600" 
       bordered="true"
-      
+      w-auto
       class="z-depth-1"
-      id="participantsTable"
-      >
+      id="participantsTable">
       <thead class="indigo white-text">
         <tr>
           <th 
@@ -31,15 +30,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let el of (elements$ | async); let i = index" (click)="onBrotherClick(i)">
-          <th scope="row">{{i+1}}</th>
+        <tr *ngFor="let el of (elements$ | async); let i = index" (click)="onBrotherClick(i, el)">
+          <th scope="col">{{i+1}}</th>
           <td>{{el.wspolnota}}</td>
           <td>
             <div class="row">
-              <div class="col-10">
+              <div class="col-11">
                 {{el.imieINazwisko}}
               </div>
-              <div class="col-2">
+              <div class="col-1">
                 <a
                   class="trash" 
                   (click)="$event.stopPropagation()" 
@@ -84,8 +83,8 @@
                         color="primary" 
                         class="waves-light"
                         mdbWavesEffect
-                        (click)="onDeleteParticipant(el.id); false"
-                        >Potwierdź</button>
+                        (click)="onDeleteParticipant(el.id); false">Potwierdź
+                      </button>
                     </div>
                   </div>
                 </div>

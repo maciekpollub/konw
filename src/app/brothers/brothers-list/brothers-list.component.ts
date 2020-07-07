@@ -20,7 +20,7 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
   headElements = ['#', 'Skąd', 'Kto', 'Gdzie']
 
   participants$: Observable<{participants: Participant[]}>;
-
+  
   constructor(
     private httpClient: HttpClient,
     private store: Store<{brothers_: {participants: Participant[]}}>,
@@ -30,14 +30,6 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
     ) { }
 
   ngOnInit(): void {    
-    // this.httpClient.get('assets/konwiwencja2018.json').subscribe(
-    //   (data: any) => {
-    //     console.log('data:', data);
-    //     this.store.dispatch(new BroActions.LoadParticipants(data.listaBraci))
-    //     this.store.dispatch(new AccomActions.LoadAccommodations(data.kwateryBuzuna))
-    //   }
-    // )
-
     this.httpClient.get('http://localhost:3000/listaBraci?_sort=wspolnota&_order=asc').subscribe(
       (data: Participant[]) => {
         this.store.dispatch(new BroActions.LoadParticipants(data))
@@ -45,9 +37,8 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
     )
     this.httpClient.get('http://localhost:3000/kwateryBuzuna').subscribe(
       (data: Accommodation[]) => {
-        this.store.dispatch(new AccomActions.LoadAccommodations(data))
-      }
-    )
+        this.store.dispatch(new AccomActions.LoadAccommodations(data));    
+    })
 
 
 
@@ -57,11 +48,12 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.cdRef.detectChanges();
+    // this.cdRef.detectChanges();
   }
 
-  onBrotherClick(id: number) {
-    this.router.navigate(['/brothers', id])
+  onBrotherClick(id: number | string, part: Participant) {
+    this.router.navigate(['/brothers', +id + 1]);
+    this.store.dispatch(new BroActions.EditParticipant({editedParticipant: part}))
   }
 
   onBackClick() {
@@ -74,7 +66,7 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
 
   onDeleteParticipant(id: string) {
     this.store.dispatch(new BroActions.DeleteParticipant({index: id}));
-    this.httpClient.delete('http://localhost:3000/listaBraci/' + id).subscribe();
+    this.httpClient.delete('http://localhost:3000/listaBraci/' + id ).subscribe();
   }
 
 }

@@ -1,6 +1,6 @@
-<div class="brother-container" *ngIf="(brother$ | async) || editMode === false">
+<div class="brother-container" *ngIf="(participant$ | async) || editMode === false">
   <div class="brother-header">
-    <h3 *ngIf="editMode === true; else brotherHeaderForNonEditMode">{{(brother$ | async).imieINazwisko}}</h3>
+    <h3 *ngIf="editMode === true; else brotherHeaderForNonEditMode">{{participant.imieINazwisko}}</h3>
     <ng-template #brotherHeaderForNonEditMode>
       <h3>Wpisz dane nowego uczestnika</h3>
     </ng-template>
@@ -9,13 +9,13 @@
   <div class="form-container">
     <form [formGroup]="pForm" (ngSubmit)="onSubmit()"> 
       <div class="row">
-        <div class="col-6">
+        <div class="col-5">
           <div class="form-group">
             <label for="commName">Wspólnota</label>
             <input type="text" id="commName" formControlName="wspolnota" class="form-control">
           </div>
         </div>
-        <div class="col-6">
+        <div class="col-7">
           <div class="form-group">
             <label for="partName">Imię i Nazwisko</label>
             <input type="text" id="partName" formControlName="imieINazwisko" class="form-control">
@@ -23,18 +23,46 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-6">
-          <div class="form-group">
+        <div class="col-12" formArrayName="kwatera">
+          <div class="row" *ngFor="let accUnitCtrl of getControls(); let i = index" [formGroupName]="i">
+            <div class="col-10">
+              <select type="text" id="allocation" formControlName="miejsce" class="form-control">
+                <option 
+                  *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                  (click)="onAccSelectOptionClick(accommodation.id)"
+                  value="{{accommodation.kwatera + ' (m-ce nr ' + accommodation.numerLozka +')'}}"
+                  [ngStyle]="{color: !!accommodation.przydzial ? 'red' : 'blue'}"   
+                ><p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                </option>
+              </select>
+
+            </div>
+            <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
+              <a class="trash" (click)="onDeleteAccommodationUnit(i)">
+                <span >
+                  <mdb-icon fas icon="trash"></mdb-icon>
+                </span>
+              </a>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <button type="button" class="btn btn-primary btn-sm" (click)="onAddAccommodationUnit()">Dodaj zakwaterowanie</button>
+            </div>
+          </div>
+          <hr>
+          
+          <!-- <div class="form-group">
             <label for="allocation">Zakwaterowanie</label>
             <select type="text" id="allocation" formControlName="kwatera" class="form-control">
               <option 
-                *ngFor="let accommodation of (accommodations$ | async)"
+                *ngFor="let accommodation of (accommodations$ | async); let i = index"
                 value="accommodation.kwatera"  
-              >{{accommodation.kwatera}}</option>
+              ><p>{{accommodation.kwatera}}  ___  miejsce nr {{availableBedsNumbers[i]}}</p></option>
             </select>
-          </div>
+          </div> -->
         </div>
-        <div class="col-2">
+        <!-- <div class="col-2"> -->
           <!-- <div class="form-group">
             <label for="allocated">...dokonane</label>
             <select *ngIf="editMode === true; else allocatedSelectForNonEditMode " name="allocated" id="allocated" class="form-control">
@@ -48,7 +76,7 @@
               </select>
             </ng-template>
           </div> -->
-        </div>
+        <!-- </div> -->
         <!-- <div class="col-2">
           <div class="form-group">
             <label for="no">Nr</label>

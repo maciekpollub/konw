@@ -4,6 +4,7 @@ import * as BroActions from './brothers.actions'
 
 const initialState = {
   participants: [],
+  currentParticipantId: null, 
 }
 
 export function brothersReducer(state = initialState, action: BroActions.BrothersActions) {
@@ -13,13 +14,22 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
         ...state,
         participants: [...action.payload]
       }
+    case BroActions.EDIT_PARTICIPANT: {
+      const currentPartId = action.payload.editedParticipant.id;
+      return {
+        ...state,
+        currentParticipantId: currentPartId,
+      }
+    } 
+  
     case BroActions.UPDATE_PARTICIPANT: {
       let participantsCopy = [...state.participants];
       participantsCopy[action.payload.index] = action.payload.newParticipant;
       let updatedParticipants = participantsCopy;
       return {
         ...state,
-        participants: [...updatedParticipants]
+        participants: [...updatedParticipants],
+        currentParticipantId: null,
       }
     }
     case BroActions.ADD_PARTICIPANT: {
@@ -41,7 +51,8 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
       console.log('posortowane' ,participantsSorted)
       return {
         ...state,
-        participants: [...participantsSorted]
+        participants: [...participantsSorted],
+        currentParticipantId: null,
       }
     }
     case BroActions.DELETE_PARTICIPANT: {

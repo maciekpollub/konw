@@ -16,4 +16,20 @@ export class UpdateAccommodation implements Action {
   constructor(public payload: {index: number, accommodation: Accommodation}) {}
 }
 
-export type AccommodationsActions = LoadAccommodations | UpdateAccommodation;
+export const TAKE_ACCOMMODATION = 'TAKE_ACCOMMODATION';
+export class TakeAccommodation implements Action {
+  readonly type = TAKE_ACCOMMODATION;
+  constructor(public payload: {index: string}) {}
+}
+
+export const FREE_ACCOMMODATION = 'FREE_ACCOMMODATION';
+export class FreeAccommodation implements Action {
+  readonly type = FREE_ACCOMMODATION;
+  constructor(public payload: {index: string}) {}
+}
+
+export type AccommodationsActions =
+ LoadAccommodations
+| UpdateAccommodation
+| TakeAccommodation
+| FreeAccommodation;

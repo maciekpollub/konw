@@ -1,13 +1,15 @@
-import { HttpClient } from '@angular/common/http';
+import { AccommodationsActions } from './../../../accommodations/store/accommodations.actions';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Accommodation } from './../../../models/accommodation.model';
-import { map, tap } from 'rxjs/operators';
+import { map, tap, withLatestFrom, take } from 'rxjs/operators';
 import { Participant } from './../../../models/participant.model';
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { combineLatest, Observable, of, Subscription, zip } from 'rxjs';
-import * as BroActions from '../../../brothers/store/brothers.actions'
+import { combineLatest, Observable, of, Subscription, zip, Subject } from 'rxjs';
+import * as BroActions from '../../store/brothers.actions';
+import * as AccomActions from '../../../accommodations/store/accommodations.actions';
 
 @Component({
   selector: 'app-brother',
@@ -16,84 +18,88 @@ import * as BroActions from '../../../brothers/store/brothers.actions'
 })
 export class BrotherComponent implements OnInit, OnDestroy {
   editMode = false;
-  brother$: Observable<Participant>;
-  subscription: Subscription;
-  currentParticipantsQuantity: number;
-  participantsQuantitySubscription: Subscription;
+  participant$: Observable<Participant>;
+  participant: Participant;
+  currentParticipantId: string | number;
 
   accommodations$: Observable<Accommodation[]>;
+  accommodation: Accommodation;
 
-  pForm: FormGroup;
+  subscription: Subscription;
+  modeSubscription: Subscription;
+
+  pForm: FormGroup = new FormGroup({});
+  //kwatery$: Observable<Array<any>> = of([]);
+  kwatery: Subscription;
 
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private httpClient: HttpClient,
     private store: Store<{
-      brothers_: {participants: Participant[]},
-      accommodations_: {accommodations: Accommodation[]},
-    }>) { }
+      brothers_: {participants: Participant[], currentParticipantId: string | number},
+      accommodations_: {accommodations: Accommodation[]}}>) { }
+
 
   ngOnInit(): void {
-    this.activatedRoute.params.subscribe((params: Params) => {
-      this.editMode = !isNaN(+params['id']);
+    this.modeSubscription = this.store.select('brothers_').subscribe((brothersState) => {
+      const currentId = brothersState.currentParticipantId;
+      this.editMode = !!currentId;
+      console.log('Edit mode is:', this.editMode);
+      if (this.editMode) { this.currentParticipantId = currentId }; 
     })
+    
     this.accommodations$ = this.store.select('accommodations_')
-    .pipe(map(object => object.accommodations), tap(d => console.log(d)));
-
-    this.participantsQuantitySubscription = this.store.select('brothers_').subscribe((brothers) => {
-      return this.currentParticipantsQuantity = brothers.participants.length;
-    }
-    )
-
+    .pipe(map(object => object.accommodations));
     this.initForm();
   }
 
   private initForm() {
+    let accommodationUnits = new FormArray([]);
+    let participants$: Observable<Participant[]> = this.store.select('brothers_').pipe(
+      map((object) => object.participants)
+    );
+
     if (this.editMode) {
-      let param$: Observable<any> = this.activatedRoute.params.pipe(
-        map((params: Params) => params['id'])
-      );
       
-      let participants$: Observable<Participant[]> = this.store.select('brothers_')
-      .pipe(
-        map(object => {
-          return object.participants;
-        })
-      );
-  
-      this.brother$ = combineLatest(param$, participants$).pipe(
-        map(([param, prtpts]) => {
-          let index = param;
-          let bro = prtpts[index];
-          return bro;
+      this.participant$ = participants$.pipe(
+        map((participants) => {
+          this.participant = participants.find(el => el.id === this.currentParticipantId);
+          console.log('paricipant: ', this.participant)
+          return this.participant;
         }),
-        tap((brother: Participant) => {
+        tap((participant: Participant) => {
+          if (participant && participant.kwatera) {
+            for (let accUnit of participant.kwatera) {
+              accommodationUnits.push(new FormGroup({
+                'miejsce': new FormControl(accUnit, Validators.required)
+              }));
+            }
+          }
           this.pForm = new FormGroup({
-            'id': new FormControl(+brother.id),
-            'imieINazwisko': new FormControl(brother.imieINazwisko, Validators.required),
-            'wspolnota': new FormControl(brother.wspolnota, Validators.required),
-            'kwatera': new FormControl(brother.kwatera, Validators.required),
-            'prezbiter': new FormControl(brother.prezbiter, Validators.pattern(/^[0-9]+/)),
-            'malzenstwo': new FormControl(brother.malzenstwo, Validators.pattern(/^[0-9]+/)),
-            'kobieta': new FormControl(brother.kobieta, Validators.pattern(/^[0-9]+/)),
-            'mezczyzna': new FormControl(brother.mezczyzna, Validators.pattern(/^[0-9]+/)),
-            'bobas': new FormControl(brother.bobas, Validators.pattern(/^[0-9]+/)),
-            'dziecko': new FormControl(brother.dziecko, Validators.pattern(/^[0-9]+/)),
-            'nianiaOddzielnie': new FormControl(brother.nianiaOddzielnie, Validators.pattern(/^[0-9]+/)),
-            'uwagi': new FormControl(brother.uwagi),
-            'wiek': new FormControl(brother.wiek, Validators.pattern(/^[1-9]+[0-9]+/)),
-            'srodekTransportu': new FormControl(brother.srodekTransportu),
-            'p': new FormControl(brother.p)
+            'imieINazwisko': new FormControl(participant?.imieINazwisko, Validators.required),
+            'wspolnota': new FormControl(participant?.wspolnota, Validators.required),
+            'kwatera': accommodationUnits,
+            'prezbiter': new FormControl(participant?.prezbiter, Validators.pattern(/^[0-9]+/)),
+            'malzenstwo': new FormControl(participant?.malzenstwo, Validators.pattern(/^[0-9]+/)),
+            'kobieta': new FormControl(participant?.kobieta, Validators.pattern(/^[0-9]+/)),
+            'mezczyzna': new FormControl(participant?.mezczyzna, Validators.pattern(/^[0-9]+/)),
+            'bobas': new FormControl(participant?.bobas, Validators.pattern(/^[0-9]+/)),
+            'dziecko': new FormControl(participant?.dziecko, Validators.pattern(/^[0-9]+/)),
+            'nianiaOddzielnie': new FormControl(participant?.nianiaOddzielnie, Validators.pattern(/^[0-9]+/)),
+            'uwagi': new FormControl(participant?.uwagi),
+            'wiek': new FormControl(participant?.wiek, Validators.pattern(/^[1-9]+[0-9]+/)),
+            'srodekTransportu': new FormControl(participant?.srodekTransportu),
+            'p': new FormControl(participant?.p)
           })
-        })
+        }),
+        tap(d => console.log('kontrolki na samym początku:', this.getControls()))
       )
     } else {
       this.pForm = new FormGroup({
-        'id': new FormControl(null),
         'imieINazwisko': new FormControl(null, Validators.required),
         'wspolnota': new FormControl(null, Validators.required),
-        'kwatera': new FormControl(null, Validators.required),
+        'kwatera': accommodationUnits,
         'prezbiter': new FormControl(null, Validators.pattern(/^[0-9]+/)),
         'malzenstwo': new FormControl(null, Validators.pattern(/^[0-9]+/)),
         'kobieta': new FormControl(null, Validators.pattern(/^[0-9]+/)),
@@ -106,8 +112,28 @@ export class BrotherComponent implements OnInit, OnDestroy {
         'srodekTransportu': new FormControl(null),
         'p': new FormControl(null)
       })
+      this.kwatery = this.pForm.get('kwatera').valueChanges.subscribe(d => console.log('dane z kwatery:', d))
     }
     
+    
+  }
+
+  onAccSelectOptionClick(index: string) {
+    this.store.dispatch(new AccomActions.TakeAccommodation({index: index}))
+  }
+
+  onAddAccommodationUnit() {
+    (this.pForm.get('kwatera') as FormArray).push(
+      new FormGroup({
+        'miejsce': new FormControl(null, Validators.required)
+      })
+    )
+  }
+
+  onDeleteAccommodationUnit(index: number) {
+    console.log('na deletie:' ,this.getControls());
+    (this.pForm.get('kwatera') as FormArray).controls.splice(index, 1);
+    return (this.pForm.get('kwatera') as FormArray).controls;
   }
 
   onBackToList() {
@@ -115,11 +141,20 @@ export class BrotherComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
-    let newParticipant = new Participant(
-      this.pForm.value['id'],
+    let arrayOfStringAccUnits: string[] = [];
+
+    for (let control of this.getControls()) {
+      arrayOfStringAccUnits.push(control.get('miejsce').value)
+    }
+    console.log('arrayof string acc units:', arrayOfStringAccUnits)
+  
+
+    let newP = new Participant(
+      '',
       this.pForm.value['wspolnota'],
       this.pForm.value['imieINazwisko'],
-      this.pForm.value['kwatera'],
+      '',
+      arrayOfStringAccUnits,
       this.pForm.value['prezbiter'],
       this.pForm.value['malzenstwo'],
       this.pForm.value['kobieta'],
@@ -134,30 +169,35 @@ export class BrotherComponent implements OnInit, OnDestroy {
       );
 
       if (this.editMode) {
-        this.subscription = this.activatedRoute.params.pipe(
-          map((params: Params) => +params['id']),
-          map((id: number) => {
-            return {index: id, newPart: newParticipant}
-          })).subscribe((data) => {
-            this.store.dispatch(new BroActions.UpdateParticipant({ index: data.index, newParticipant: data.newPart}));
-          });
-          this.router.navigate(['../'], {relativeTo: this.activatedRoute});
+        newP['id'] = this.currentParticipantId;
+        console.log('obecny uczestnik', newP);
+        this.subscription = this.httpClient.patch('http://localhost:3000/listaBraci/' + this.currentParticipantId, newP, {
+          headers: {
+            'Content-Type': 'application/json'
+          }}
+        )
+         .subscribe();
+        this.router.navigate(['../'], {relativeTo: this.activatedRoute});
       } else {
-        newParticipant['id'] = (this.currentParticipantsQuantity + 1).toString();
-        this.subscription = this.httpClient.post('http://localhost:3000/listaBraci', newParticipant).subscribe();
-        // let brothersQuantity: number;
-        // this.subscription = this.store.select('brothers_').pipe(
-        //   map(brothers => brothersQuantity = brothers.participants.length)
-        // ).subscribe((data) => {
-        //     newParticipant['id'] = (brothersQuantity + 1).toString();
-        //     this.store.dispatch(new BroActions.AddParticipant(newParticipant))
-        //   })
+        delete newP.id;
+        this.subscription = this.httpClient.post('http://localhost:3000/listaBraci', newP, {
+          headers: new HttpHeaders({
+            'Content-Type': 'application/json',
+          })
+        })
+        .subscribe();
         this.router.navigate(['../'], {relativeTo: this.activatedRoute}); 
       }
   }
+  
+
+  getControls = () => {
+    return (this.pForm.get('kwatera') as FormArray).controls;
+  } 
 
   ngOnDestroy() {
     if (this.subscription) {this.subscription.unsubscribe()};
-    this.participantsQuantitySubscription.unsubscribe();
+    if (this.modeSubscription) {this.modeSubscription.unsubscribe()};
+    if (this.kwatery) {this.kwatery.unsubscribe()};
   }
 }

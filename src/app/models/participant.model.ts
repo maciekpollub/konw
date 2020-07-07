@@ -1,11 +1,11 @@
 export class Participant {
   constructor(
-    public id: string,
+    public id: string | number,
     public wspolnota: string,
     public imieINazwisko: string,
 
     public obecnosc?: string,
-    public kwatera?: string,
+    public kwatera?: string[] | string,
     public prezbiter?: string,
     public malzenstwo?: string,
     public kobieta?: string,

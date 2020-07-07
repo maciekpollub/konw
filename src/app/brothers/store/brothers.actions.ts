@@ -7,6 +7,12 @@ export class LoadParticipants implements Action {
   constructor(public payload: Participant[]) {}
 }
 
+export const EDIT_PARTICIPANT = 'EDIT_PARTICIPANT';
+export class EditParticipant implements Action {
+  readonly type = EDIT_PARTICIPANT;
+  constructor(public payload: {editedParticipant: Participant}) {}
+}
+
 export const UPDATE_PARTICIPANT = 'UPDATE_PARTICIPANT';
 export class UpdateParticipant implements Action {
   readonly type = UPDATE_PARTICIPANT;
@@ -25,4 +31,9 @@ export class DeleteParticipant implements Action {
   constructor(public payload: {index: string}) {}
 }
 
-export type BrothersActions = LoadParticipants | UpdateParticipant | AddParticipant | DeleteParticipant;
+export type BrothersActions =
+    LoadParticipants
+  | EditParticipant
+  | UpdateParticipant
+  | AddParticipant
+  | DeleteParticipant;
