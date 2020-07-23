@@ -16,6 +16,9 @@ export class Accommodation {
     public kobietaClassic?: string,
     public mezczyznaClassic?: string,
     public choroba?: string,
-    public nianiaOddzielna?: string) {}
+    public nianiaOddzielna?: string,
+    public wolnePrzezNoc1?: string,
+    public wolnePrzezNoc2?: string,
+    public wolnePrzezNoc3?: string,) {}
   
 }

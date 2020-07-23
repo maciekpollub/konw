@@ -1,5 +1,5 @@
 import { AccommodationsActions } from './../../../accommodations/store/accommodations.actions';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpEvent } from '@angular/common/http';
 import { Accommodation } from './../../../models/accommodation.model';
 import { map, tap, withLatestFrom, take } from 'rxjs/operators';
 import { Participant } from './../../../models/participant.model';
@@ -11,15 +11,17 @@ import { combineLatest, Observable, of, Subscription, zip, Subject } from 'rxjs'
 import * as BroActions from '../../store/brothers.actions';
 import * as AccomActions from '../../../accommodations/store/accommodations.actions';
 
+
 @Component({
   selector: 'app-brother',
   templateUrl: './brother.component.html',
-  styleUrls: ['./brother.component.scss']
+  styleUrls: ['./brother.component.scss'],
 })
 export class BrotherComponent implements OnInit, OnDestroy {
   editMode = false;
   participant$: Observable<Participant>;
   participant: Participant;
+  childrenArray: number[] = [];
   currentParticipantId: string | number;
 
   accommodations$: Observable<Accommodation[]>;
@@ -27,10 +29,16 @@ export class BrotherComponent implements OnInit, OnDestroy {
 
   subscription: Subscription;
   modeSubscription: Subscription;
+  accSubs: Subscription;
+  formValueSubscription: Subscription;
+  statusSubs: Subscription;
 
   pForm: FormGroup = new FormGroup({});
   //kwatery$: Observable<Array<any>> = of([]);
   kwatery: Subscription;
+
+  change = new Subject<Accommodation>();
+  activeSelectCtrlValue: string;
 
   constructor(
     private router: Router,
@@ -40,9 +48,9 @@ export class BrotherComponent implements OnInit, OnDestroy {
       brothers_: {participants: Participant[], currentParticipantId: string | number},
       accommodations_: {accommodations: Accommodation[]}}>) { }
 
-
   ngOnInit(): void {
     this.modeSubscription = this.store.select('brothers_').subscribe((brothersState) => {
+      console.log('brothers state: ', brothersState.participants)
       const currentId = brothersState.currentParticipantId;
       this.editMode = !!currentId;
       console.log('Edit mode is:', this.editMode);
@@ -51,11 +59,14 @@ export class BrotherComponent implements OnInit, OnDestroy {
     
     this.accommodations$ = this.store.select('accommodations_')
     .pipe(map(object => object.accommodations));
+
     this.initForm();
+     
   }
 
   private initForm() {
     let accommodationUnits = new FormArray([]);
+    let childrenAccommodations = new FormArray([]);
     let participants$: Observable<Participant[]> = this.store.select('brothers_').pipe(
       map((object) => object.participants)
     );
@@ -63,8 +74,19 @@ export class BrotherComponent implements OnInit, OnDestroy {
     if (this.editMode) {
       
       this.participant$ = participants$.pipe(
+        take(1),
         map((participants) => {
           this.participant = participants.find(el => el.id === this.currentParticipantId);
+          if (this.participant.dziecko) {
+            for (let i = 1; i < +this.participant.dziecko + 1; i++) {
+              this.childrenArray.push(i);
+              childrenAccommodations.push(new FormGroup({
+                'miejsceDziecka': new FormControl(null)
+              }))
+            }
+            console.log('childrenArray: ', this.childrenArray)
+          }
+          
           console.log('paricipant: ', this.participant)
           return this.participant;
         }),
@@ -80,8 +102,12 @@ export class BrotherComponent implements OnInit, OnDestroy {
             'imieINazwisko': new FormControl(participant?.imieINazwisko, Validators.required),
             'wspolnota': new FormControl(participant?.wspolnota, Validators.required),
             'kwatera': accommodationUnits,
+            'miejsce': new FormControl(null),
             'prezbiter': new FormControl(participant?.prezbiter, Validators.pattern(/^[0-9]+/)),
             'malzenstwo': new FormControl(participant?.malzenstwo, Validators.pattern(/^[0-9]+/)),
+            'mazMiejsce': new FormControl(null),
+            'zonaMiejsce': new FormControl(null),
+            'dzieciMiejsce': childrenAccommodations,
             'kobieta': new FormControl(participant?.kobieta, Validators.pattern(/^[0-9]+/)),
             'mezczyzna': new FormControl(participant?.mezczyzna, Validators.pattern(/^[0-9]+/)),
             'bobas': new FormControl(participant?.bobas, Validators.pattern(/^[0-9]+/)),
@@ -90,18 +116,26 @@ export class BrotherComponent implements OnInit, OnDestroy {
             'uwagi': new FormControl(participant?.uwagi),
             'wiek': new FormControl(participant?.wiek, Validators.pattern(/^[1-9]+[0-9]+/)),
             'srodekTransportu': new FormControl(participant?.srodekTransportu),
-            'p': new FormControl(participant?.p)
+            'p': new FormControl(participant?.p),
+            'noc1': new FormControl(!participant?.nieobNoc1),
+            'noc2': new FormControl(!participant?.nieobNoc2),
+            'noc3': new FormControl(!participant?.nieobNoc3),
           })
         }),
-        tap(d => console.log('kontrolki na samym początku:', this.getControls()))
+        // tap(() => this.formValueSubscription = this.pForm.valueChanges.subscribe(val => console.log('wartości formularza: ----------', val))),
+        tap(() => this.formValueSubscription = this.pForm.valueChanges
+        .subscribe(val => console.log('status kontrolki dzieciMiejsce: ----------', this.pForm.controls.dzieciMiejsce)))
       )
     } else {
       this.pForm = new FormGroup({
         'imieINazwisko': new FormControl(null, Validators.required),
         'wspolnota': new FormControl(null, Validators.required),
         'kwatera': accommodationUnits,
+        'miejsce': new FormControl(null),
         'prezbiter': new FormControl(null, Validators.pattern(/^[0-9]+/)),
         'malzenstwo': new FormControl(null, Validators.pattern(/^[0-9]+/)),
+        'mazMiejsce': new FormControl(null),
+        'zonaMiejsce': new FormControl(null),
         'kobieta': new FormControl(null, Validators.pattern(/^[0-9]+/)),
         'mezczyzna': new FormControl(null, Validators.pattern(/^[0-9]+/)),
         'bobas': new FormControl(null, Validators.pattern(/^[0-9]+/)),
@@ -115,11 +149,23 @@ export class BrotherComponent implements OnInit, OnDestroy {
       this.kwatery = this.pForm.get('kwatera').valueChanges.subscribe(d => console.log('dane z kwatery:', d))
     }
     
-    
   }
 
-  onAccSelectOptionClick(index: string) {
-    this.store.dispatch(new AccomActions.TakeAccommodation({index: index}))
+  onAccSelectOptionMousemove(event: any) {
+    let value = event.target.value;
+    this.activeSelectCtrlValue = value;
+    console.log('previous select value: ', this.activeSelectCtrlValue);
+  }
+
+  onAccSelectOptionChange(event: any) {
+    let value = event.target.value;
+    console.log('value na miejscu dziecka: ', value)
+    if (!this.activeSelectCtrlValue) {
+      this.store.dispatch(new AccomActions.TakeAccommodation({index: value}))
+    } else {
+      this.store.dispatch(new AccomActions.FreeAccommodation({index: this.activeSelectCtrlValue}))
+      this.store.dispatch(new AccomActions.TakeAccommodation({index: value}));
+    }
   }
 
   onAddAccommodationUnit() {
@@ -132,16 +178,21 @@ export class BrotherComponent implements OnInit, OnDestroy {
 
   onDeleteAccommodationUnit(index: number) {
     console.log('na deletie:' ,this.getControls());
+    let ctrlAccUnit = (this.pForm.get('kwatera') as FormArray).controls[index].get('miejsce').value;
+    console.log('ctrlAccUnit: ', ctrlAccUnit);
     (this.pForm.get('kwatera') as FormArray).controls.splice(index, 1);
+    this.store.dispatch(new AccomActions.FreeAccommodation({index: ctrlAccUnit}))
     return (this.pForm.get('kwatera') as FormArray).controls;
   }
 
   onBackToList() {
     this.router.navigate(['../'], {relativeTo: this.activatedRoute})
+    this.store.select('accommodations_').subscribe(d => console.log('stan accommodations: ', d))
   }
 
   onSubmit() {
     let arrayOfStringAccUnits: string[] = [];
+    
 
     for (let control of this.getControls()) {
       arrayOfStringAccUnits.push(control.get('miejsce').value)
@@ -193,11 +244,17 @@ export class BrotherComponent implements OnInit, OnDestroy {
 
   getControls = () => {
     return (this.pForm.get('kwatera') as FormArray).controls;
-  } 
+  }
+  getChildrenControls = () => {
+    return (this.pForm.get('dzieciMiejsce') as FormArray).controls;
+  }
 
   ngOnDestroy() {
     if (this.subscription) {this.subscription.unsubscribe()};
     if (this.modeSubscription) {this.modeSubscription.unsubscribe()};
     if (this.kwatery) {this.kwatery.unsubscribe()};
+    if (this.formValueSubscription) {this.formValueSubscription.unsubscribe()};
+
+    if (this.statusSubs) {this.statusSubs.unsubscribe()};
   }
 }

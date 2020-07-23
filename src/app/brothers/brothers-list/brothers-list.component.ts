@@ -32,7 +32,21 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {    
     this.httpClient.get('http://localhost:3000/listaBraci?_sort=wspolnota&_order=asc').subscribe(
       (data: Participant[]) => {
-        this.store.dispatch(new BroActions.LoadParticipants(data))
+        let dataForStore = data.map((p: Participant) => {
+          let extP: Participant;
+          if (p.malzenstwo === '2') {
+            const husbandAndWifeArray = p.imieINazwisko.split(' ');
+            p['mazImie'] = husbandAndWifeArray[1];
+            p['zonaImie'] = husbandAndWifeArray[3];
+            extP = p;
+          } else {
+            extP = p;
+          }
+          return extP;
+          })
+          console.log('data for store:', dataForStore)
+
+        this.store.dispatch(new BroActions.LoadParticipants(dataForStore))
       }
     )
     this.httpClient.get('http://localhost:3000/kwateryBuzuna').subscribe(

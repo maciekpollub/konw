@@ -1,0 +1,15 @@
+.nights-container {
+  display: flex;
+  align-items: center;
+  .all-nights {
+    margin: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    padding: 2px;
+    border: 1px  solid #007bff;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+}

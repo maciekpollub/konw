@@ -31,9 +31,16 @@ export class DeleteParticipant implements Action {
   constructor(public payload: {index: string}) {}
 }
 
+export const MARK_ALL_NIGHTS = 'MARK_ALL_NIGHTS';
+export class MarkAllNights implements Action {
+  readonly type = MARK_ALL_NIGHTS;
+  constructor() {}
+}
+
 export type BrothersActions =
     LoadParticipants
   | EditParticipant
   | UpdateParticipant
   | AddParticipant
-  | DeleteParticipant;
+  | DeleteParticipant
+  | MarkAllNights;

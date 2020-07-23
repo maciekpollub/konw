@@ -14,6 +14,7 @@ import { MDBBootstrapModule } from 'angular-bootstrap-md';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { AccommodationComponent } from './accommodations/accommodation/accommodation.component';
+import { NightsComponent } from './brothers/brothers-list/brother/nights/nights.component';
 
 
 @NgModule({
@@ -24,6 +25,7 @@ import { AccommodationComponent } from './accommodations/accommodation/accommoda
     NoFileChosenComponent,
     BrotherComponent,
     AccommodationComponent,
+    NightsComponent,
   ],
   imports: [
     BrowserModule,

@@ -17,5 +17,10 @@ export class Participant {
     public uwagi?: string,
     public wiek?: string,
     public srodekTransportu?: string,
+    public mazImie?: string,
+    public zonaImie?: string,
+    public nieobNoc1?: string,
+    public nieobNoc2?: string,
+    public nieobNoc3?: string,
     ) {}
 }

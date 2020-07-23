@@ -1086,19 +1086,19 @@
       "imieINazwisko": "Darda Janina",
       "kobieta": "1",
       "wiek": null,
-      "srodekTransportu": "70",
+      "srodekTransportu": null,
       "obecnosc": "",
       "kwatera": [
-        "bud. A parter - p.1 (m-ce nr 2)"
+        "bud. A parter - p.2 (m-ce nr 2)"
       ],
       "prezbiter": null,
       "malzenstwo": null,
       "mezczyzna": null,
       "bobas": null,
       "dziecko": null,
-      "p": "Tak-razem z Tomkiem Widławskim",
-      "nianiaOddzielnie": null,
-      "uwagi": null
+      "p": null,
+      "nianiaOddzielnie": "70",
+      "uwagi": "Tak-razem z Tomkiem Widławskim"
     },
     {
       "id": "6",
@@ -1106,7 +1106,19 @@
       "imieINazwisko": "Pawłasek Lila",
       "kobieta": "1",
       "wiek": "60",
-      "srodekTransportu": "Tak-razem z Tomkiem Widławskim"
+      "srodekTransportu": "Tak-razem z Tomkiem Widławskim",
+      "obecnosc": "",
+      "kwatera": [
+        "4"
+      ],
+      "prezbiter": null,
+      "malzenstwo": null,
+      "mezczyzna": null,
+      "bobas": null,
+      "dziecko": null,
+      "p": null,
+      "nianiaOddzielnie": null,
+      "uwagi": null
     },
     {
       "id": "7",
@@ -2417,8 +2429,8 @@
       "imieINazwisko": "Jan Olsza",
       "obecnosc": "",
       "kwatera": [
-        "bud. A 1 piętro - p.15 (m-ce nr 1)",
-        "bud. A 1 piętro - p.13 (m-ce nr 3)"
+        "bud. A 1 piętro - p.14 (m-ce nr 4)",
+        "Domek nr 5 - dwupoziomowy (m-ce nr 7)"
       ],
       "prezbiter": null,
       "malzenstwo": null,

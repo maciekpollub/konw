@@ -64,6 +64,25 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
         participants: [...changedParticipantsCopy]
       }
     }
+    case BroActions.MARK_ALL_NIGHTS: {
+      let participantsCopy = [...state.participants];
+      // let index = state.currentParticipantId;
+      // let takenParticipant = participantsCopy.find(p => p.id === index);
+      // let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      // takenParticipant = {
+      //   ...takenParticipant,
+      //   nieobNoc1: '',
+      //   nieobNoc2: '',
+      //   nieobNoc3: '',
+      // }
+      // participantsCopy[takenParticipantNo] = takenParticipant
+      return {
+        ...state,
+        participants: [...participantsCopy]
+      }
+
+
+    }
       
     default:
       return state;
