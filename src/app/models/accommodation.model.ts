@@ -1,7 +1,7 @@
 export class Accommodation {
   constructor(
     public id: string,
-    public kwatera: string | string[],
+    public kwatera: string,
     public tapczan1Osobowy: string,
     public dostawka: string,
     public numerLozka: string,

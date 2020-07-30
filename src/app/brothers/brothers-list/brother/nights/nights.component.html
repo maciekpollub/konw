@@ -1,19 +1,40 @@
 <div class="nights-container">
   <div class="form-check form-check-inline">
-    <p class="all-nights" (click)="onAllNightsClick($event)">cały</p>
+    <p class="all-nights" (click)="onAllNightsClick($event)">wszystkie noce</p>
   </div>
   <div [formGroup]="form">
     <div formGroupName="nights">
       <div class="form-check form-check-inline">
-        <input class="form-check-input" type="checkbox" id="night1" value="option1" #input formControlName="noc1">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          id="night1" 
+          value="option1" 
+          #input 
+          formControlName="noc1" 
+          (click)="onNight1Click()">
         <label class="form-check-label" for="night1">1</label>
       </div>
       <div class="form-check form-check-inline">
-        <input class="form-check-input" type="checkbox" id="night2" value="option2" #input formControlName="noc2">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          id="night2" 
+          value="option2" 
+          #input 
+          formControlName="noc2"
+          (click)="onNight2Click()">
         <label class="form-check-label" for="night2">2</label>
       </div>
       <div class="form-check form-check-inline">
-        <input class="form-check-input" type="checkbox" id="night3" value="option3" #input formControlName="noc3">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          id="night3" 
+          value="option3" 
+          #input 
+          formControlName="noc3"
+          (click)="onNight3Click()">
         <label class="form-check-label" for="night3">3</label>
       </div>
     </div>

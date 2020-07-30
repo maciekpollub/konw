@@ -32,7 +32,7 @@ export function accommodationsReducer(state = initialState, action: AccomActions
       console.log('reducer odczytał numer zajętej kwatery jako: ', takenAccommodationNo)
       takenAccommodation = {
         ...takenAccommodation,
-        przydzial: 't',
+        przydzial: 'tak',
       }
       accommodationsCopy[takenAccommodationNo] = takenAccommodation;
       // console.log('taken acc:', takenAccommodation)

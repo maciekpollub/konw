@@ -30,6 +30,16 @@ export class NightsComponent implements OnInit {
     }))
   }
 
+  onNight1Click() {
+    this.store.dispatch(new BroActions.MarkFirstNight());
+  }
+  onNight2Click() {
+    this.store.dispatch(new BroActions.MarkSecondNight());
+  }
+
+  onNight3Click() {
+    this.store.dispatch(new BroActions.MarkThirdNight());
+  }
   onAllNightsClick(event: any) {
     event.preventDefault();
     event.stopPropagation();

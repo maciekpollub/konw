@@ -15,6 +15,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { AccommodationComponent } from './accommodations/accommodation/accommodation.component';
 import { NightsComponent } from './brothers/brothers-list/brother/nights/nights.component';
+import { NameOfSinglePipe } from './brothers/pipes/name-of-single.pipe';
+import { FullAccommodationNameComponent } from './brothers/brothers-list/brother/full-accommodation-name/full-accommodation-name.component';
 
 
 @NgModule({
@@ -26,6 +28,8 @@ import { NightsComponent } from './brothers/brothers-list/brother/nights/nights.
     BrotherComponent,
     AccommodationComponent,
     NightsComponent,
+    NameOfSinglePipe,
+    FullAccommodationNameComponent,
   ],
   imports: [
     BrowserModule,

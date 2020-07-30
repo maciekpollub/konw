@@ -1,15 +1,16 @@
 import { AccommodationsActions } from './../../../accommodations/store/accommodations.actions';
 import { HttpClient, HttpHeaders, HttpEvent } from '@angular/common/http';
 import { Accommodation } from './../../../models/accommodation.model';
-import { map, tap, withLatestFrom, take } from 'rxjs/operators';
+import { map, tap, take } from 'rxjs/operators';
 import { Participant } from './../../../models/participant.model';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { combineLatest, Observable, of, Subscription, zip, Subject } from 'rxjs';
+import { combineLatest, Observable, of, Subscription, zip, Subject, forkJoin, BehaviorSubject } from 'rxjs';
 import * as BroActions from '../../store/brothers.actions';
 import * as AccomActions from '../../../accommodations/store/accommodations.actions';
+import { logWarnings } from 'protractor/built/driverProviders';
 
 
 @Component({
@@ -19,85 +20,68 @@ import * as AccomActions from '../../../accommodations/store/accommodations.acti
 })
 export class BrotherComponent implements OnInit, OnDestroy {
   editMode = false;
+  participants$: Observable<Participant[]>;
   participant$: Observable<Participant>;
   participant: Participant;
-  childrenArray: number[] = [];
   currentParticipantId: string | number;
-
+  childrenArray: number[] = [];
   accommodations$: Observable<Accommodation[]>;
   accommodation: Accommodation;
+  activeSelectCtrlValue: string = '';
+  childrenAccommodations = new FormArray([]);
+  exemptedAccommodationsIdsToSetFreeInDB: string[] = [];
 
-  subscription: Subscription;
+  httpAccommodationsAndBrothersSubscription: Subscription;
+  httpExemptedAccommodationsSubscription: Subscription;
+  wrappedHttpExemptedAccommodationsSubscription: Subscription;
   modeSubscription: Subscription;
-  accSubs: Subscription;
   formValueSubscription: Subscription;
-  statusSubs: Subscription;
-
-  pForm: FormGroup = new FormGroup({});
-  //kwatery$: Observable<Array<any>> = of([]);
   kwatery: Subscription;
 
-  change = new Subject<Accommodation>();
-  activeSelectCtrlValue: string;
+  pForm: FormGroup = new FormGroup({});
 
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private httpClient: HttpClient,
     private store: Store<{
-      brothers_: {participants: Participant[], currentParticipantId: string | number},
-      accommodations_: {accommodations: Accommodation[]}}>) { }
+      brothers_: { participants: Participant[], currentParticipantId: string | number, currentKwateraJustBeforeDisaccommodation: string[] | string },
+      accommodations_: { accommodations: Accommodation[] }
+    }>) { }
 
   ngOnInit(): void {
     this.modeSubscription = this.store.select('brothers_').subscribe((brothersState) => {
       console.log('brothers state: ', brothersState.participants)
       const currentId = brothersState.currentParticipantId;
       this.editMode = !!currentId;
-      console.log('Edit mode is:', this.editMode);
-      if (this.editMode) { this.currentParticipantId = currentId }; 
+      if (this.editMode) { this.currentParticipantId = currentId };
     })
-    
-    this.accommodations$ = this.store.select('accommodations_')
-    .pipe(map(object => object.accommodations));
+    this.accommodations$ = this.store.select('accommodations_').pipe(
+      map(object => object.accommodations));
+    this.participants$ = this.store.select('brothers_').pipe(
+      map((object) => object.participants));
 
     this.initForm();
-     
   }
 
   private initForm() {
     let accommodationUnits = new FormArray([]);
-    let childrenAccommodations = new FormArray([]);
-    let participants$: Observable<Participant[]> = this.store.select('brothers_').pipe(
-      map((object) => object.participants)
-    );
 
     if (this.editMode) {
-      
-      this.participant$ = participants$.pipe(
-        take(1),
+      this.participant$ = this.participants$.pipe(
         map((participants) => {
           this.participant = participants.find(el => el.id === this.currentParticipantId);
-          if (this.participant.dziecko) {
-            for (let i = 1; i < +this.participant.dziecko + 1; i++) {
-              this.childrenArray.push(i);
-              childrenAccommodations.push(new FormGroup({
-                'miejsceDziecka': new FormControl(null)
-              }))
+          if (!!this.participant.dziecko && +this.participant.dziecko !== this.childrenArray.length) {  
+            if (this.participant.malzenstwo === '1' ||
+               (this.participant.kobieta === '1' || this.participant.mezczyzna === '1')) {
+              this.generateChildrenControls(this.participant, 1);
+            } else {
+              this.generateChildrenControls(this.participant, 2);
             }
-            console.log('childrenArray: ', this.childrenArray)
           }
-          
-          console.log('paricipant: ', this.participant)
           return this.participant;
         }),
         tap((participant: Participant) => {
-          if (participant && participant.kwatera) {
-            for (let accUnit of participant.kwatera) {
-              accommodationUnits.push(new FormGroup({
-                'miejsce': new FormControl(accUnit, Validators.required)
-              }));
-            }
-          }
           this.pForm = new FormGroup({
             'imieINazwisko': new FormControl(participant?.imieINazwisko, Validators.required),
             'wspolnota': new FormControl(participant?.wspolnota, Validators.required),
@@ -107,7 +91,7 @@ export class BrotherComponent implements OnInit, OnDestroy {
             'malzenstwo': new FormControl(participant?.malzenstwo, Validators.pattern(/^[0-9]+/)),
             'mazMiejsce': new FormControl(null),
             'zonaMiejsce': new FormControl(null),
-            'dzieciMiejsce': childrenAccommodations,
+            'dzieciMiejsce': this.childrenAccommodations,
             'kobieta': new FormControl(participant?.kobieta, Validators.pattern(/^[0-9]+/)),
             'mezczyzna': new FormControl(participant?.mezczyzna, Validators.pattern(/^[0-9]+/)),
             'bobas': new FormControl(participant?.bobas, Validators.pattern(/^[0-9]+/)),
@@ -121,10 +105,30 @@ export class BrotherComponent implements OnInit, OnDestroy {
             'noc2': new FormControl(!participant?.nieobNoc2),
             'noc3': new FormControl(!participant?.nieobNoc3),
           })
+          if (participant.kwatera) {
+            this.pForm.patchValue({
+              'p': 'tak'
+            })
+            for (let accUnit of participant.kwatera) {
+              accommodationUnits.push(new FormGroup({
+                'miejsce': new FormControl(accUnit, Validators.required)
+              }));
+            }
+            if (this.participant.malzenstwo === '2') {
+              this.pForm.patchValue({
+                'mazMiejsce': this.participant.kwatera[0],
+                'zonaMiejsce': this.participant.kwatera[1],
+              });
+            }  
+          }
+          
         }),
-        // tap(() => this.formValueSubscription = this.pForm.valueChanges.subscribe(val => console.log('wartości formularza: ----------', val))),
-        tap(() => this.formValueSubscription = this.pForm.valueChanges
-        .subscribe(val => console.log('status kontrolki dzieciMiejsce: ----------', this.pForm.controls.dzieciMiejsce)))
+        tap(() => this.formValueSubscription = this.pForm.valueChanges.subscribe(
+          (val) => {
+            console.log('kwatera teraz...........:', this.pForm.controls.kwatera)
+            console.log('obecnie obsługiwany participant:', this.participant);
+            console.log('status kontrolki dzieciMiejsce: ----------', this.pForm.controls.dzieciMiejsce)
+          }))
       )
     } else {
       this.pForm = new FormGroup({
@@ -146,25 +150,30 @@ export class BrotherComponent implements OnInit, OnDestroy {
         'srodekTransportu': new FormControl(null),
         'p': new FormControl(null)
       })
-      this.kwatery = this.pForm.get('kwatera').valueChanges.subscribe(d => console.log('dane z kwatery:', d))
+      // this.kwatery = this.pForm.get('kwatera').valueChanges.subscribe(d => console.log('dane z kwatery:', d))
     }
-    
+
   }
 
   onAccSelectOptionMousemove(event: any) {
     let value = event.target.value;
     this.activeSelectCtrlValue = value;
-    console.log('previous select value: ', this.activeSelectCtrlValue);
+    console.log('mousemove: ', this.activeSelectCtrlValue)
   }
 
   onAccSelectOptionChange(event: any) {
     let value = event.target.value;
-    console.log('value na miejscu dziecka: ', value)
-    if (!this.activeSelectCtrlValue) {
-      this.store.dispatch(new AccomActions.TakeAccommodation({index: value}))
+    if (this.activeSelectCtrlValue === '') {
+      this.store.dispatch(new AccomActions.TakeAccommodation({ index: value }))
+      this.store.dispatch(new BroActions.AccommodateParticipant({ accomId: value, currPartId: this.currentParticipantId }));
     } else {
-      this.store.dispatch(new AccomActions.FreeAccommodation({index: this.activeSelectCtrlValue}))
-      this.store.dispatch(new AccomActions.TakeAccommodation({index: value}));
+      if (this.participant.kwatera.indexOf(this.activeSelectCtrlValue) === this.participant.kwatera.lastIndexOf(this.activeSelectCtrlValue)) {
+        this.store.dispatch(new AccomActions.FreeAccommodation({ index: this.activeSelectCtrlValue }));
+      };
+      this.store.dispatch(new BroActions.DisaccommodateParticipant({ accomId: this.activeSelectCtrlValue, currPartId: this.currentParticipantId}));
+      this.exemptedAccommodationsIdsToSetFreeInDB.push(this.activeSelectCtrlValue);
+      this.store.dispatch(new AccomActions.TakeAccommodation({ index: value }));
+      this.store.dispatch(new BroActions.ReaccommodateParticipant({cancelledAccomId: this.activeSelectCtrlValue, accomId: value, currPartId: this.currentParticipantId}));
     }
   }
 
@@ -177,84 +186,194 @@ export class BrotherComponent implements OnInit, OnDestroy {
   }
 
   onDeleteAccommodationUnit(index: number) {
-    console.log('na deletie:' ,this.getControls());
+    console.log('na deletie:', this.getControls());
     let ctrlAccUnit = (this.pForm.get('kwatera') as FormArray).controls[index].get('miejsce').value;
     console.log('ctrlAccUnit: ', ctrlAccUnit);
     (this.pForm.get('kwatera') as FormArray).controls.splice(index, 1);
-    this.store.dispatch(new AccomActions.FreeAccommodation({index: ctrlAccUnit}))
+    this.store.dispatch(new AccomActions.FreeAccommodation({ index: ctrlAccUnit }))
     return (this.pForm.get('kwatera') as FormArray).controls;
   }
 
   onBackToList() {
-    this.router.navigate(['../'], {relativeTo: this.activatedRoute})
-    this.store.select('accommodations_').subscribe(d => console.log('stan accommodations: ', d))
+    this.router.navigate(['../'], { relativeTo: this.activatedRoute })
+    this.store.select('accommodations_').subscribe(d => console.log('stan accommodations: ', d));
+    console.log('changed indices: ', this.exemptedAccommodationsIdsToSetFreeInDB)
   }
 
   onSubmit() {
     let arrayOfStringAccUnits: string[] = [];
-    
-
     for (let control of this.getControls()) {
       arrayOfStringAccUnits.push(control.get('miejsce').value)
     }
-    console.log('arrayof string acc units:', arrayOfStringAccUnits)
-  
 
-    let newP = new Participant(
-      '',
-      this.pForm.value['wspolnota'],
-      this.pForm.value['imieINazwisko'],
-      '',
-      arrayOfStringAccUnits,
-      this.pForm.value['prezbiter'],
-      this.pForm.value['malzenstwo'],
-      this.pForm.value['kobieta'],
-      this.pForm.value['mezczyzna'],
-      this.pForm.value['bobas'],
-      this.pForm.value['dziecko'],
-      this.pForm.value['nianiaOddzielnie'],
-      this.pForm.value['uwagi'],
-      this.pForm.value['wiek'],
-      this.pForm.value['srodekTransportu'],
-      this.pForm.value['p'],
+    let updatedP: Participant;
+
+    if (this.editMode) {
+      console.log('hej byłem w trybie edycji!');
+      if (!!this.participant.malzenstwo) {
+        arrayOfStringAccUnits = [];
+        arrayOfStringAccUnits.push(
+          this.pForm.value['mazMiejsce'],
+          this.pForm.value['zonaMiejsce']
+        );
+        if (!!this.participant.dziecko) {
+          for (let ctrl of this.getChildrenControls()) {
+            arrayOfStringAccUnits.push(ctrl.value.miejsceDziecka)
+          }
+        }
+      };
+
+      updatedP = new Participant(
+        this.currentParticipantId,
+        this.pForm.value['wspolnota'],
+        this.pForm.value['imieINazwisko'],
+        '',
+        arrayOfStringAccUnits,
+        this.pForm.value['prezbiter'],
+        this.pForm.value['malzenstwo'],
+        this.pForm.value['kobieta'],
+        this.pForm.value['mezczyzna'],
+        this.pForm.value['bobas'],
+        this.pForm.value['dziecko'],
+        this.pForm.value['p'],
+        this.pForm.value['nianiaOddzielnie'],
+        this.pForm.value['uwagi'],
+        this.pForm.value['wiek'],
+        this.pForm.value['srodekTransportu'],
+        this.pForm.value['nieobNoc1'],
+        this.pForm.value['nieobNoc1'],
+        this.pForm.value['nieobNoc1'],
       );
-
-      if (this.editMode) {
-        newP['id'] = this.currentParticipantId;
-        console.log('obecny uczestnik', newP);
-        this.subscription = this.httpClient.patch('http://localhost:3000/listaBraci/' + this.currentParticipantId, newP, {
+      let httpBrothersListObservable$ = this.httpClient.patch(
+        'http://localhost:3000/listaBraci/' + this.currentParticipantId,
+        updatedP,
+        {
           headers: {
             'Content-Type': 'application/json'
-          }}
-        )
-         .subscribe();
-        this.router.navigate(['../'], {relativeTo: this.activatedRoute});
-      } else {
-        delete newP.id;
-        this.subscription = this.httpClient.post('http://localhost:3000/listaBraci', newP, {
-          headers: new HttpHeaders({
-            'Content-Type': 'application/json',
+          }
+        }
+      );
+      let arrayOfHttpAccommodations = this.generateArrayOfHttpPatchObservables();
+      this.httpAccommodationsAndBrothersSubscription = zip(
+        ...arrayOfHttpAccommodations,
+        httpBrothersListObservable$
+        ).subscribe(
+          (data) => console.log('Wysyłam dane do serwera z patcha!', data)
+        );
+
+      if (this.exemptedAccommodationsIdsToSetFreeInDB.length !== 0) {
+        let verifiedExemptedAccIdArray:string[] = [];
+        this.wrappedHttpExemptedAccommodationsSubscription = this.store.select('accommodations_').pipe(
+          map((stateObject) => stateObject.accommodations),
+          map(accommodations => {
+            return accommodations.filter(acc => {
+              return this.exemptedAccommodationsIdsToSetFreeInDB.indexOf(acc.id) !== -1;
+          })}),
+          map((exemptedAccsAtTheTimeOfSubmit: Accommodation[]) => {
+            for (let acc of exemptedAccsAtTheTimeOfSubmit) {
+              if (!acc.przydzial) {verifiedExemptedAccIdArray.push(acc.id)}
+            }
+            return verifiedExemptedAccIdArray;
+          }),
+          tap((verifiedExemptedAccIdArray) => {
+            for (let id of verifiedExemptedAccIdArray) {
+              let currentUpdatedAccPart = {
+                przydzial: '',
+                imieINazwisko: '',
+                wspolnota: '',
+                wolnePrzezNoc1: '',
+                wolnePrzezNoc2: '',
+                wolnePrzezNoc3: '', 
+              }
+              this.httpExemptedAccommodationsSubscription = this.httpClient.patch(
+                'http://localhost:3000/kwateryBuzuna/' + id,
+                currentUpdatedAccPart,
+                {
+                  headers: {
+                    'Content-Type': 'application/json'
+                  }
+                }
+              ).subscribe();
+            }
           })
-        })
-        .subscribe();
-        this.router.navigate(['../'], {relativeTo: this.activatedRoute}); 
+        ).subscribe();
       }
+
+      this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+    } else {
+      // delete updatedP.id;
+      // this.httpBrothersListSubscription = this.httpClient.post('http://localhost:3000/listaBraci', updatedP, {
+      //   headers: new HttpHeaders({
+      //     'Content-Type': 'application/json',
+      //   })
+      // })
+        // .subscribe();
+      this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+    }
+  }
+
+  generateChildrenControls = (participant: Participant, numberOfParents: number) => {
+    let childrenAccs = [];
+    if (participant.kwatera) {
+      childrenAccs = [...this.participant.kwatera];
+    } else {
+      let numberOfFamilyMembers = +this.participant.dziecko + numberOfParents;
+      for (let i = 0; i < numberOfFamilyMembers; i++) {
+        childrenAccs.push(null)
+      }
+    }
+    childrenAccs.splice(0, numberOfParents);  
+    for (let i = 1; i < +this.participant.dziecko + 1; i++) {
+      this.childrenArray.push(i);
+      this.childrenAccommodations.push(new FormGroup({
+        'miejsceDziecka' : new FormControl(childrenAccs[i-1])
+      }))
+    }
+    return this.childrenAccommodations;      
+  }
+
+  generateArrayOfHttpPatchObservables = () => {
+    let arrayOfHttpPatchObservables: Array<Observable<any>> = [];
+    for (let updatedAccId of [...this.participant.kwatera]) {
+      let currentUpdatedAccPart = {
+        przydzial: 'tak',
+        imieINazwisko: this.participant.imieINazwisko,
+        wspolnota: this.participant.wspolnota,
+        wolnePrzezNoc1: this.participant.nieobNoc1,
+        wolnePrzezNoc2: this.participant.nieobNoc2 ,
+        wolnePrzezNoc3: this.participant.nieobNoc3 
+      }
+      let httpPatchObs$: Observable<any> = this.httpClient.patch(
+        'http://localhost:3000/kwateryBuzuna/' + updatedAccId,
+        currentUpdatedAccPart,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      arrayOfHttpPatchObservables.push(httpPatchObs$);
+    }
+    console.log('To jest tablica z patch obses: ', arrayOfHttpPatchObservables)
+    return arrayOfHttpPatchObservables;
   }
   
 
   getControls = () => {
     return (this.pForm.get('kwatera') as FormArray).controls;
   }
+
   getChildrenControls = () => {
-    return (this.pForm.get('dzieciMiejsce') as FormArray).controls;
+    let a = (this.pForm.get('dzieciMiejsce') as FormArray).controls;
+    return a;
   }
 
   ngOnDestroy() {
-    if (this.subscription) {this.subscription.unsubscribe()};
-    if (this.modeSubscription) {this.modeSubscription.unsubscribe()};
-    if (this.kwatery) {this.kwatery.unsubscribe()};
-    if (this.formValueSubscription) {this.formValueSubscription.unsubscribe()};
-
-    if (this.statusSubs) {this.statusSubs.unsubscribe()};
+    if (this.httpAccommodationsAndBrothersSubscription) { this.httpAccommodationsAndBrothersSubscription.unsubscribe() };
+    if (this.httpExemptedAccommodationsSubscription) { this.httpExemptedAccommodationsSubscription.unsubscribe() };
+    if (this.wrappedHttpExemptedAccommodationsSubscription) { this.wrappedHttpExemptedAccommodationsSubscription.unsubscribe() };
+    if (this.modeSubscription) { this.modeSubscription.unsubscribe() };
+    if (this.formValueSubscription) { this.formValueSubscription.unsubscribe() };
+    if (this.kwatery) { this.kwatery.unsubscribe() };
   }
 }

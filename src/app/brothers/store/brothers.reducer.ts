@@ -4,7 +4,8 @@ import * as BroActions from './brothers.actions'
 
 const initialState = {
   participants: [],
-  currentParticipantId: null, 
+  currentParticipantId: null,
+  currentKwateraJustBeforeDisaccommodation: null,
 }
 
 export function brothersReducer(state = initialState, action: BroActions.BrothersActions) {
@@ -15,7 +16,7 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
         participants: [...action.payload]
       }
     case BroActions.EDIT_PARTICIPANT: {
-      const currentPartId = action.payload.editedParticipant.id;
+      let currentPartId = action.payload.editedParticipant.id;
       return {
         ...state,
         currentParticipantId: currentPartId,
@@ -64,24 +65,128 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
         participants: [...changedParticipantsCopy]
       }
     }
-    case BroActions.MARK_ALL_NIGHTS: {
+    case BroActions.MARK_FIRST_NIGHT: {
       let participantsCopy = [...state.participants];
-      // let index = state.currentParticipantId;
-      // let takenParticipant = participantsCopy.find(p => p.id === index);
-      // let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
-      // takenParticipant = {
-      //   ...takenParticipant,
-      //   nieobNoc1: '',
-      //   nieobNoc2: '',
-      //   nieobNoc3: '',
-      // }
-      // participantsCopy[takenParticipantNo] = takenParticipant
+      let index = state.currentParticipantId;
+      let takenParticipant = participantsCopy.find(p => p.id === index);
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+        takenParticipant = {
+          ...takenParticipant,
+          nieobNoc1: takenParticipant.nieobNoc1 === 'tak' ? '' : 'tak' 
+        }      
+      participantsCopy[takenParticipantNo] = takenParticipant
       return {
         ...state,
         participants: [...participantsCopy]
       }
-
-
+    }
+    case BroActions.MARK_SECOND_NIGHT: {
+      let participantsCopy = [...state.participants];
+      let index = state.currentParticipantId;
+      let takenParticipant = participantsCopy.find(p => p.id === index);
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+        takenParticipant = {
+          ...takenParticipant,
+          nieobNoc2: takenParticipant.nieobNoc2 === 'tak' ? '' : 'tak' 
+        }      
+      participantsCopy[takenParticipantNo] = takenParticipant
+      return {
+        ...state,
+        participants: [...participantsCopy]
+      }
+    }
+    case BroActions.MARK_THIRD_NIGHT: {
+      let participantsCopy = [...state.participants];
+      let index = state.currentParticipantId;
+      let takenParticipant = participantsCopy.find(p => p.id === index);
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+        takenParticipant = {
+          ...takenParticipant,
+          nieobNoc3: takenParticipant.nieobNoc3 === 'tak' ? '' : 'tak' 
+        }      
+      participantsCopy[takenParticipantNo] = takenParticipant
+      return {
+        ...state,
+        participants: [...participantsCopy]
+      }
+    }
+    case BroActions.MARK_ALL_NIGHTS: {
+      let participantsCopy = [...state.participants];
+      let index = state.currentParticipantId;
+      let takenParticipant = participantsCopy.find(p => p.id === index);
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      takenParticipant = {
+        ...takenParticipant,
+        nieobNoc1: '',
+        nieobNoc2: '',
+        nieobNoc3: '',
+      }
+      participantsCopy[takenParticipantNo] = takenParticipant
+      return {
+        ...state,
+        participants: [...participantsCopy]
+      }
+    }
+    case BroActions.ACCOMMODATE_PARTICIPANT: {
+      let newAccId = action.payload.accomId;
+      let currPartId = action.payload.currPartId;
+      let participantsCopy = [...state.participants];
+      let takenParticipant = participantsCopy.find(p => p.id === currPartId);
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      let takenParticipantKwatera = takenParticipant.kwatera;
+      takenParticipant = {
+        ...takenParticipant,
+        kwatera: [...takenParticipantKwatera, newAccId]
+      }
+      participantsCopy[takenParticipantNo] = takenParticipant;
+      return {
+        ...state,
+        participants: [...participantsCopy]
+      }
+    }
+    case BroActions.REACCOMMODATE_PARTICIPANT: {
+      let cancelledAccId = action.payload.cancelledAccomId;
+      let newAccId = action.payload.accomId;
+      let currPartId = action.payload.currPartId;
+      let participantsCopy = [...state.participants];
+      let takenParticipant = participantsCopy.find(p => p.id === currPartId);
+      let positionToReplace = state.currentKwateraJustBeforeDisaccommodation.lastIndexOf(cancelledAccId);
+      console.log('Position to replace: ,', positionToReplace);
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      let takenParticipantKwatera = [...takenParticipant.kwatera];
+      takenParticipantKwatera.splice(positionToReplace, 0, newAccId);
+      takenParticipant = {
+        ...takenParticipant,
+        kwatera: takenParticipantKwatera,
+      }
+      participantsCopy[takenParticipantNo] = takenParticipant;
+      console.log('po uzupełnieniu arrayka :', [...takenParticipantKwatera])
+      return {
+        ...state,
+        participants: [...participantsCopy],
+        currentKwateraJustBeforeDisaccommodation: takenParticipantKwatera,
+      }
+    }
+    case BroActions.DISACCOMMODATE_PARTICIPANT: {
+      let pastAccId = action.payload.accomId;
+      let currPartId = action.payload.currPartId;
+      let participantsCopy = [...state.participants];
+      let takenParticipant = participantsCopy.find(p => p.id === currPartId);
+      let kwateraBeforeDisaccomodation = takenParticipant.kwatera;
+      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      let positionOfKwateraToExpell = takenParticipant.kwatera.lastIndexOf(pastAccId);
+      let takenParticipantKwatera = [...takenParticipant.kwatera]
+      takenParticipantKwatera.splice(positionOfKwateraToExpell, 1);
+      takenParticipant = {
+        ...takenParticipant,
+        kwatera: [...takenParticipantKwatera]
+      }
+      participantsCopy[takenParticipantNo] = takenParticipant;
+      return {
+        ...state,
+        participants: [...participantsCopy],
+        currentKwateraJustBeforeDisaccommodation: kwateraBeforeDisaccomodation,
+      }
     }
       
     default:

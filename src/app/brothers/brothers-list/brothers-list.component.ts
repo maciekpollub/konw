@@ -1,9 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Participant } from './../../models/participant.model';
 import { Accommodation } from './../../models/accommodation.model';
-import { BrothersService } from './../brothers.service';
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
-import { Subscription, Observable, of } from 'rxjs';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { Router, ActivatedRoute } from '@angular/router';
 import { map, tap } from 'rxjs/operators'; 
@@ -15,7 +14,7 @@ import * as AccomActions from '../../accommodations/store/accommodations.actions
   templateUrl: './brothers-list.component.html',
   styleUrls: ['./brothers-list.component.scss']
 })
-export class BrothersListComponent implements OnInit, AfterViewInit {
+export class BrothersListComponent implements OnInit {
   elements$: Observable<Participant[]>;
   headElements = ['#', 'Skąd', 'Kto', 'Gdzie']
 
@@ -23,7 +22,9 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
   
   constructor(
     private httpClient: HttpClient,
-    private store: Store<{brothers_: {participants: Participant[]}}>,
+    private store: Store<{
+      brothers_: { participants: Participant[] },
+      accommodations_: { acccommodations: Accommodation[] }}>,
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private cdRef: ChangeDetectorRef,
@@ -54,15 +55,9 @@ export class BrothersListComponent implements OnInit, AfterViewInit {
         this.store.dispatch(new AccomActions.LoadAccommodations(data));    
     })
 
-
-
     this.elements$ = this.store.select('brothers_').pipe(
       map(pieceOfState => pieceOfState.participants)
     )
-  }
-
-  ngAfterViewInit() {
-    // this.cdRef.detectChanges();
   }
 
   onBrotherClick(id: number | string, part: Participant) {
