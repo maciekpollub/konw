@@ -26,13 +26,16 @@ export function accommodationsReducer(state = initialState, action: AccomActions
     case AccomActions.TAKE_ACCOMMODATION: {
       let accommodationsCopy = [...state.accommodations];
       let availableAccommodations = accommodationsCopy.filter(el => !el.przydzial);
-      let index = action.payload.index;
+      let index = action.payload.accomIndex;
       let takenAccommodation = availableAccommodations.find(el => el.id === index);
       let takenAccommodationNo = accommodationsCopy.indexOf(takenAccommodation);
+      let forWhom = action.payload.participant;
       console.log('reducer odczytał numer zajętej kwatery jako: ', takenAccommodationNo)
       takenAccommodation = {
         ...takenAccommodation,
+        imieINazwisko: forWhom.imieINazwisko,
         przydzial: 'tak',
+        wspolnota: forWhom.wspolnota,
       }
       accommodationsCopy[takenAccommodationNo] = takenAccommodation;
       // console.log('taken acc:', takenAccommodation)
@@ -50,7 +53,9 @@ export function accommodationsReducer(state = initialState, action: AccomActions
       let accommodationToFreeNo = accommodationsCopy.indexOf(accommodationToFree);
       accommodationToFree = {
         ...accommodationToFree,
-        przydzial: ''
+        imieINazwisko: '',
+        przydzial: '',
+        wspolnota: ''
       }
       accommodationsCopy[accommodationToFreeNo] = accommodationToFree;
       return {

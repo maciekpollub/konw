@@ -8,5 +8,7 @@ import { Subject } from 'rxjs';
 export class BrothersService {
 
   participantsEmitter = new Subject<Participant[]>()
-  constructor() { }
+  constructor() {}
+
+  //forbiddenPlaceClickEmitter = new Subject<Participant>()
 }

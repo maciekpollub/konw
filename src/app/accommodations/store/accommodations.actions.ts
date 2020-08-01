@@ -1,3 +1,4 @@
+import { Participant } from './../../models/participant.model';
 import { UPDATE_PARTICIPANT } from './../../brothers/store/brothers.actions';
 import { Accommodation } from './../../models/accommodation.model';
 import { Action } from '@ngrx/store';
@@ -19,7 +20,7 @@ export class UpdateAccommodation implements Action {
 export const TAKE_ACCOMMODATION = 'TAKE_ACCOMMODATION';
 export class TakeAccommodation implements Action {
   readonly type = TAKE_ACCOMMODATION;
-  constructor(public payload: {index: string}) {}
+  constructor(public payload: {accomIndex: string, participant: Participant}) {}
 }
 
 export const FREE_ACCOMMODATION = 'FREE_ACCOMMODATION';

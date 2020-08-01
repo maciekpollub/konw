@@ -39,14 +39,18 @@
                 <label for="husband-allocation" class="col-2">{{participant.mazImie}}</label>
                 <select type="text" id="husband-allocation" formControlName="mazMiejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
-                  (change)="onAccSelectOptionChange($event)">
+                  (click)="onForeignPlaceClick($event)"
+                  (change)="onAccSelectOptionChange($event)"
+                  (focus)="onFocus($event)"
+                  >
                   <option  
                     *ngFor="let accommodation of (accommodations$ | async); let i = index"
                     [value]="accommodation.id"
                     [ngStyle]="{
                       color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
                       fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
-                    }">   
+                    }"
+                    >   
                     <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
                   </option>
                 </select>
@@ -55,7 +59,10 @@
                 <label for="wife-allocation" class="col-2">{{participant.zonaImie}}</label>
                 <select type="text" id="wife-allocation" formControlName="zonaMiejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
-                  (change)="onAccSelectOptionChange($event)">
+                  (click)="onForeignPlaceClick($event)"
+                  (change)="onAccSelectOptionChange($event)"
+                  (focus)="onFocus($event)"
+                  >
                   <option  
                     *ngFor="let accommodation of (accommodations$ | async); let i = index"
                     [value]="accommodation.id"
@@ -74,7 +81,10 @@
                 <label for="parent-allocation" class="col-2">{{participant.imieINazwisko | nameOfSingle}}</label>
                 <select type="text" id="parent-allocation" formControlName="miejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
-                  (change)="onAccSelectOptionChange($event)">
+                  (click)="onForeignPlaceClick($event)"
+                  (change)="onAccSelectOptionChange($event)"
+                  (focus)="onFocus($event)"
+                >
                   <option  
                     *ngFor="let accommodation of (accommodations$ | async); let i = index"
                     [value]="accommodation.id"
@@ -99,8 +109,10 @@
                       <label for="i" class="col-2">Dziecko {{i+1}}</label>
                       <select type="text" id="i" formControlName="miejsceDziecka" class="form-control col-7"
                         (mousemove)="onAccSelectOptionMousemove($event)"
+                        (click)="onForeignPlaceClick($event)"
                         (change)="onAccSelectOptionChange($event)"
-                        >    
+                        (focus)="onFocus($event)"
+                      >    
                         <option  
                           *ngFor="let accommodation of (accommodations$ | async); let i = index"
                           [value]="accommodation.id"
@@ -132,7 +144,10 @@
                 <label for="allocation" class="col-2">{{participant.imieINazwisko | nameOfSingle}}</label>
                 <select type="text" id="allocation" formControlName="miejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
-                  (change)="onAccSelectOptionChange($event)">
+                  (click)="onForeignPlaceClick($event)"
+                  (change)="onAccSelectOptionChange($event)"
+                  (focus)="onFocus($event)"  
+                >
                   <option  
                     *ngFor="let accommodation of (accommodations$ | async); let i = index"
                     [value]="accommodation.id"
@@ -308,4 +323,26 @@
   </div>
 </div>
 
+
+<app-modal 
+  *ngIf="forbiddenPlaceInSelectOptionClicked === true || forbiddenPlaceWithinTheSameParticipantMembersClicked === true" 
+  (close)="onCloseModal()"
+>
+  <div class="modal-content-container">
+    <div class="modal-header">
+      <button class="btn-primary" (click)="onCloseModal()" >Zamknij</button>
+    </div>
+    <div class="modal-frame">
+      <div *ngIf="forbiddenPlaceInSelectOptionClicked === true">
+        Wybrano miejsce zajęte już przez 
+        <p>
+          <span style="text-transform: italic; font-weight: bold;">{{forbiddenPlaceOwner}}</span>
+        </p>
+      </div>
+      <div *ngIf="forbiddenPlaceWithinTheSameParticipantMembersClicked === true">
+        To miejsce jest już zajęte przez członka rodziny. Jeśli chcesz je zajać, relokuj najpierw w/w osobę.
+      </div>
+    </div>
+  </div>
+</app-modal>
   

@@ -1,3 +1,5 @@
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { BrothersService } from './../../brothers.service';
 import { AccommodationsActions } from './../../../accommodations/store/accommodations.actions';
 import { HttpClient, HttpHeaders, HttpEvent } from '@angular/common/http';
 import { Accommodation } from './../../../models/accommodation.model';
@@ -10,7 +12,6 @@ import { Store } from '@ngrx/store';
 import { combineLatest, Observable, of, Subscription, zip, Subject, forkJoin, BehaviorSubject } from 'rxjs';
 import * as BroActions from '../../store/brothers.actions';
 import * as AccomActions from '../../../accommodations/store/accommodations.actions';
-import { logWarnings } from 'protractor/built/driverProviders';
 
 
 @Component({
@@ -26,15 +27,23 @@ export class BrotherComponent implements OnInit, OnDestroy {
   currentParticipantId: string | number;
   childrenArray: number[] = [];
   accommodations$: Observable<Accommodation[]>;
+  accommodations: Accommodation[];
   accommodation: Accommodation;
   activeSelectCtrlValue: string = '';
   childrenAccommodations = new FormArray([]);
   exemptedAccommodationsIdsToSetFreeInDB: string[] = [];
+  forbiddenPlaceInSelectOptionClicked = false;
+  forbiddenPlaceWithinTheSameParticipantMembersClicked = false;
+  forbiddenPlaceOwner = '';
+  activeFormControlName = '';
+  listOfTakenAccommodationIds: string[];
 
   httpAccommodationsAndBrothersSubscription: Subscription;
   httpExemptedAccommodationsSubscription: Subscription;
   wrappedHttpExemptedAccommodationsSubscription: Subscription;
   modeSubscription: Subscription;
+  listOfTakenAccommodationIdsSubscribe: Subscription;
+  accommodationsSubscribe: Subscription;
   formValueSubscription: Subscription;
   kwatery: Subscription;
 
@@ -61,10 +70,24 @@ export class BrotherComponent implements OnInit, OnDestroy {
     this.participants$ = this.store.select('brothers_').pipe(
       map((object) => object.participants));
 
+    this.listOfTakenAccommodationIdsSubscribe = this.accommodations$.pipe(
+      map((accommodations: Accommodation[]) => {
+        let takenAccs = accommodations.filter(el => el.imieINazwisko !== '');
+        return takenAccs;
+        }
+      ),
+      tap((accommodations: Accommodation[]) => {
+        this.listOfTakenAccommodationIds = [];
+        accommodations.forEach(el => this.listOfTakenAccommodationIds.push(el.id))
+      }),
+      // take(1)
+      ).subscribe(() => console.log('This is the list of taken acc ids: ', this.listOfTakenAccommodationIds))
+
     this.initForm();
   }
 
   private initForm() {
+    this.accommodationsSubscribe = this.accommodations$.subscribe((accs) => this.accommodations = accs);
     let accommodationUnits = new FormArray([]);
 
     if (this.editMode) {
@@ -125,8 +148,10 @@ export class BrotherComponent implements OnInit, OnDestroy {
         }),
         tap(() => this.formValueSubscription = this.pForm.valueChanges.subscribe(
           (val) => {
+            console.log('To jest form:', this.pForm.controls);
             console.log('kwatera teraz...........:', this.pForm.controls.kwatera)
             console.log('obecnie obsługiwany participant:', this.participant);
+            console.log('stan dla accommodatinos: ', this.accommodations);
             console.log('status kontrolki dzieciMiejsce: ----------', this.pForm.controls.dzieciMiejsce)
           }))
       )
@@ -155,25 +180,53 @@ export class BrotherComponent implements OnInit, OnDestroy {
 
   }
 
+  onFocus(event: any) {
+    this.activeFormControlName = event.target.attributes['formControlName'].value;
+  }
+
   onAccSelectOptionMousemove(event: any) {
     let value = event.target.value;
     this.activeSelectCtrlValue = value;
     console.log('mousemove: ', this.activeSelectCtrlValue)
   }
 
+  onForeignPlaceClick = (event: any) => {
+    let chosenId = event.target.value;
+    this.forbiddenPlaceOwner = this.accommodations.find(el => el.id === chosenId).imieINazwisko;
+    console.log('This is again list of taaaken acc ids: ', this.listOfTakenAccommodationIds);
+    if ( this.listOfTakenAccommodationIds.indexOf(chosenId) !== -1 && this.participant.kwatera.indexOf(chosenId) === -1) {
+      console.log(' stało się.....ok')
+      this.forbiddenPlaceInSelectOptionClicked = true;
+    }
+  }
+
   onAccSelectOptionChange(event: any) {
     let value = event.target.value;
-    if (this.activeSelectCtrlValue === '') {
-      this.store.dispatch(new AccomActions.TakeAccommodation({ index: value }))
+    if (this.activeSelectCtrlValue === '' && this.participant.p === '') {
+      if (this.listOfTakenAccommodationIds.indexOf(value) === -1) {
+      this.store.dispatch(new AccomActions.TakeAccommodation({ accomIndex: value, participant: this.participant}));
       this.store.dispatch(new BroActions.AccommodateParticipant({ accomId: value, currPartId: this.currentParticipantId }));
+      } else {
+        this.forbiddenPlaceInSelectOptionClicked = true;
+      }
     } else {
-      if (this.participant.kwatera.indexOf(this.activeSelectCtrlValue) === this.participant.kwatera.lastIndexOf(this.activeSelectCtrlValue)) {
+      if (
+        this.participant.kwatera.indexOf(this.activeSelectCtrlValue) 
+        === this.participant.kwatera.lastIndexOf(this.activeSelectCtrlValue)
+        && 
+        this.listOfTakenAccommodationIds.indexOf(value) === -1) {
         this.store.dispatch(new AccomActions.FreeAccommodation({ index: this.activeSelectCtrlValue }));
+        this.store.dispatch(new BroActions.DisaccommodateParticipant({ accomId: this.activeSelectCtrlValue, currPartId: this.currentParticipantId}));
+        this.exemptedAccommodationsIdsToSetFreeInDB.push(this.activeSelectCtrlValue);
+        this.store.dispatch(new AccomActions.TakeAccommodation({ accomIndex: value, participant: this.participant }));
+        this.store.dispatch(new BroActions.ReaccommodateParticipant({cancelledAccomId: this.activeSelectCtrlValue, accomId: value, currPartId: this.currentParticipantId}));
+      } else {
+        if (this.participant.kwatera.indexOf(this.activeSelectCtrlValue) 
+        !== this.participant.kwatera.lastIndexOf(this.activeSelectCtrlValue)) {
+          this.forbiddenPlaceWithinTheSameParticipantMembersClicked = true;
+        }
+        // console.log('llllllllllllllllllllllllll', this.activeFormControlName);
       };
-      this.store.dispatch(new BroActions.DisaccommodateParticipant({ accomId: this.activeSelectCtrlValue, currPartId: this.currentParticipantId}));
-      this.exemptedAccommodationsIdsToSetFreeInDB.push(this.activeSelectCtrlValue);
-      this.store.dispatch(new AccomActions.TakeAccommodation({ index: value }));
-      this.store.dispatch(new BroActions.ReaccommodateParticipant({cancelledAccomId: this.activeSelectCtrlValue, accomId: value, currPartId: this.currentParticipantId}));
     }
   }
 
@@ -276,25 +329,8 @@ export class BrotherComponent implements OnInit, OnDestroy {
             return verifiedExemptedAccIdArray;
           }),
           tap((verifiedExemptedAccIdArray) => {
-            for (let id of verifiedExemptedAccIdArray) {
-              let currentUpdatedAccPart = {
-                przydzial: '',
-                imieINazwisko: '',
-                wspolnota: '',
-                wolnePrzezNoc1: '',
-                wolnePrzezNoc2: '',
-                wolnePrzezNoc3: '', 
-              }
-              this.httpExemptedAccommodationsSubscription = this.httpClient.patch(
-                'http://localhost:3000/kwateryBuzuna/' + id,
-                currentUpdatedAccPart,
-                {
-                  headers: {
-                    'Content-Type': 'application/json'
-                  }
-                }
-              ).subscribe();
-            }
+            let arrayOfHttpExemptingPatchObservables = this.generateArrayOfHttpExemptingPatchObservables(verifiedExemptedAccIdArray);
+            this.httpExemptedAccommodationsSubscription = zip(...arrayOfHttpExemptingPatchObservables).subscribe()
           })
         ).subscribe();
       }
@@ -357,6 +393,31 @@ export class BrotherComponent implements OnInit, OnDestroy {
     console.log('To jest tablica z patch obses: ', arrayOfHttpPatchObservables)
     return arrayOfHttpPatchObservables;
   }
+
+  generateArrayOfHttpExemptingPatchObservables = (arrayOfIds: string[]) => {
+    let arrayOfHttpExemptingPatchObservables: Array<Observable<any>> = [];
+    for (let id of arrayOfIds) {
+      let currentUpdatedAccPart = {
+        przydzial: '',
+        imieINazwisko: '',
+        wspolnota: '',
+        wolnePrzezNoc1: '',
+        wolnePrzezNoc2: '',
+        wolnePrzezNoc3: '', 
+      }
+      let httpPatchObs$: Observable<any> = this.httpClient.patch(
+        'http://localhost:3000/kwateryBuzuna/' + id,
+        currentUpdatedAccPart,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      arrayOfHttpExemptingPatchObservables.push(httpPatchObs$);
+    }
+    return arrayOfHttpExemptingPatchObservables;
+  }
   
 
   getControls = () => {
@@ -368,12 +429,34 @@ export class BrotherComponent implements OnInit, OnDestroy {
     return a;
   }
 
+  onCloseModal = () => {
+    this.forbiddenPlaceInSelectOptionClicked = false;
+    this.forbiddenPlaceOwner = '';
+    let actFormCtrlName: string  = this.activeFormControlName;
+    console.log('--------------------------------------------', actFormCtrlName)
+    if (this.participant.dziecko === '') {
+      this.pForm.patchValue({
+        [actFormCtrlName]: null,
+      });
+    } else {
+      this.pForm.patchValue({
+        'dzieciMiejsce': {
+          'miejsceDziecka': null
+        }
+      })
+    }
+    
+    this.forbiddenPlaceWithinTheSameParticipantMembersClicked = false;
+  }
+
   ngOnDestroy() {
     if (this.httpAccommodationsAndBrothersSubscription) { this.httpAccommodationsAndBrothersSubscription.unsubscribe() };
     if (this.httpExemptedAccommodationsSubscription) { this.httpExemptedAccommodationsSubscription.unsubscribe() };
     if (this.wrappedHttpExemptedAccommodationsSubscription) { this.wrappedHttpExemptedAccommodationsSubscription.unsubscribe() };
     if (this.modeSubscription) { this.modeSubscription.unsubscribe() };
     if (this.formValueSubscription) { this.formValueSubscription.unsubscribe() };
+    if (this.listOfTakenAccommodationIdsSubscribe) { this.listOfTakenAccommodationIdsSubscribe.unsubscribe()};
+    if (this.accommodationsSubscribe) { this.accommodationsSubscribe.unsubscribe()};
     if (this.kwatery) { this.kwatery.unsubscribe() };
   }
 }

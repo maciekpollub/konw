@@ -19,3 +19,18 @@
     }
   }
 }
+
+.modal-content-container {
+  .modal-header {
+    display: flex;
+    height: 61px;
+    width: 100%;
+  }
+  .modal-frame {
+    margin: auto;
+    height: 108px;
+    width: 351px;
+    background-color: #fff;
+  }
+}
+
