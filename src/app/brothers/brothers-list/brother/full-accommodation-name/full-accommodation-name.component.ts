@@ -30,10 +30,8 @@ export class FullAccommodationNameComponent implements OnInit {
         let accommodations = stateObject.accommodations;
         this.currentAccommodationArray = [...accommodations.filter(acc => this.idArray.indexOf(acc.id) !== -1)]
         return this.currentAccommodationArray;
-      }
-    );
+          });
   }
-  
   ngOnDestroy() {
     if (this.currentAccommodationArraySubscription) {this.currentAccommodationArraySubscription.unsubscribe()};
   }

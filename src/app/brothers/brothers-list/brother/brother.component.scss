@@ -25,12 +25,27 @@
     display: flex;
     height: 61px;
     width: 100%;
+    justify-content: center;
+    align-items: center;
   }
   .modal-frame {
-    margin: auto;
+    display: flex;
     height: 108px;
     width: 351px;
     background-color: #fff;
+    justify-content: center;
+    align-items: center;
+    .modal-info {
+      text-align: center;
+      padding: 0 15px;
+    }
+  }
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    p {
+      font-size: 14px;
+    }
   }
 }
 

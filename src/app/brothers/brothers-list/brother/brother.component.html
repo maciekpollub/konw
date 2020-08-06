@@ -154,7 +154,8 @@
                     [ngStyle]="{
                       color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
                       fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
-                    }">   
+                    }"
+                    >   
                     <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
                   </option>
                 </select>    
@@ -330,18 +331,21 @@
 >
   <div class="modal-content-container">
     <div class="modal-header">
-      <button class="btn-primary" (click)="onCloseModal()" >Zamknij</button>
+      <button class="btn btn-primary" (click)="onCloseModal()" >Zamknij</button>
     </div>
     <div class="modal-frame">
       <div *ngIf="forbiddenPlaceInSelectOptionClicked === true">
-        Wybrano miejsce zajęte już przez 
-        <p>
+        <p class="modal-info">Wybrano miejsce zajęte już przez <br>
           <span style="text-transform: italic; font-weight: bold;">{{forbiddenPlaceOwner}}</span>
         </p>
       </div>
       <div *ngIf="forbiddenPlaceWithinTheSameParticipantMembersClicked === true">
-        To miejsce jest już zajęte przez członka rodziny. Jeśli chcesz je zajać, relokuj najpierw w/w osobę.
+        <p class="modal-info">To miejsce jest już zajęte przez członka rodziny. Jeśli chcesz je zajać, relokuj najpierw w/w osobę.</p> 
       </div>
+    </div>
+    <div class="modal-footer">
+      <p>Konwiwencja_2020</p>
+      <p>15-18.X.2020</p>
     </div>
   </div>
 </app-modal>

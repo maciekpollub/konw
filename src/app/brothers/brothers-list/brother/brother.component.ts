@@ -3,13 +3,13 @@ import { BrothersService } from './../../brothers.service';
 import { AccommodationsActions } from './../../../accommodations/store/accommodations.actions';
 import { HttpClient, HttpHeaders, HttpEvent } from '@angular/common/http';
 import { Accommodation } from './../../../models/accommodation.model';
-import { map, tap, take } from 'rxjs/operators';
+import { map, tap, take, takeUntil } from 'rxjs/operators';
 import { Participant } from './../../../models/participant.model';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { combineLatest, Observable, of, Subscription, zip, Subject, forkJoin, BehaviorSubject } from 'rxjs';
+import { combineLatest, Observable, of, Subscription, zip, Subject, forkJoin, BehaviorSubject, concat, merge } from 'rxjs';
 import * as BroActions from '../../store/brothers.actions';
 import * as AccomActions from '../../../accommodations/store/accommodations.actions';
 
@@ -37,8 +37,10 @@ export class BrotherComponent implements OnInit, OnDestroy {
   forbiddenPlaceOwner = '';
   activeFormControlName = '';
   listOfTakenAccommodationIds: string[];
+  arrayOfHttpExemptingPatchObservables: Array<Observable<any>> = [];
 
-  httpAccommodationsAndBrothersSubscription: Subscription;
+  arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubject$ = new Subject<void>();
+
   httpExemptedAccommodationsSubscription: Subscription;
   wrappedHttpExemptedAccommodationsSubscription: Subscription;
   modeSubscription: Subscription;
@@ -57,6 +59,11 @@ export class BrotherComponent implements OnInit, OnDestroy {
       brothers_: { participants: Participant[], currentParticipantId: string | number, currentKwateraJustBeforeDisaccommodation: string[] | string },
       accommodations_: { accommodations: Accommodation[] }
     }>) { }
+
+    restApi = window.location.host.includes('localhost') ? 
+              "http://" + window.location.host.replace('4200','3000') :
+              window.location.protocol + '://' + window.location.host + ':3000';
+
 
   ngOnInit(): void {
     this.modeSubscription = this.store.select('brothers_').subscribe((brothersState) => {
@@ -80,7 +87,6 @@ export class BrotherComponent implements OnInit, OnDestroy {
         this.listOfTakenAccommodationIds = [];
         accommodations.forEach(el => this.listOfTakenAccommodationIds.push(el.id))
       }),
-      // take(1)
       ).subscribe(() => console.log('This is the list of taken acc ids: ', this.listOfTakenAccommodationIds))
 
     this.initForm();
@@ -128,21 +134,28 @@ export class BrotherComponent implements OnInit, OnDestroy {
             'noc2': new FormControl(!participant?.nieobNoc2),
             'noc3': new FormControl(!participant?.nieobNoc3),
           })
-          if (participant.kwatera) {
+          for (let accUnit of participant.kwatera) {
+            accommodationUnits.push(new FormGroup({
+              'miejsce': new FormControl(accUnit, Validators.required)
+            }));
+          }
+          if (this.participant.kobieta === '1' || this.participant.mezczyzna === '1') {
+            this.pForm.patchValue({
+              'miejsce': this.participant.kwatera[0]
+      
+            })
+          }
+          if (this.participant.malzenstwo === '2') {
+            this.pForm.patchValue({
+              'mazMiejsce': this.participant.kwatera[0],
+              'zonaMiejsce': this.participant.kwatera[1],
+            });
+          }
+          if (participant.kwatera.length === +participant.kobieta + +participant.mezczyzna + 
+            +participant.prezbiter + +participant.malzenstwo + +participant.dziecko) {
             this.pForm.patchValue({
               'p': 'tak'
-            })
-            for (let accUnit of participant.kwatera) {
-              accommodationUnits.push(new FormGroup({
-                'miejsce': new FormControl(accUnit, Validators.required)
-              }));
-            }
-            if (this.participant.malzenstwo === '2') {
-              this.pForm.patchValue({
-                'mazMiejsce': this.participant.kwatera[0],
-                'zonaMiejsce': this.participant.kwatera[1],
-              });
-            }  
+            })  
           }
           
         }),
@@ -187,7 +200,8 @@ export class BrotherComponent implements OnInit, OnDestroy {
   onAccSelectOptionMousemove(event: any) {
     let value = event.target.value;
     this.activeSelectCtrlValue = value;
-    console.log('mousemove: ', this.activeSelectCtrlValue)
+    console.log('mousemove: ', this.activeSelectCtrlValue);
+    // console.log('to jest kontrolka wartośćkontrolki mazMiejsce i zona Miejsce: ', this.pForm.controls.mazMiejsce.value)
   }
 
   onForeignPlaceClick = (event: any) => {
@@ -195,7 +209,6 @@ export class BrotherComponent implements OnInit, OnDestroy {
     this.forbiddenPlaceOwner = this.accommodations.find(el => el.id === chosenId).imieINazwisko;
     console.log('This is again list of taaaken acc ids: ', this.listOfTakenAccommodationIds);
     if ( this.listOfTakenAccommodationIds.indexOf(chosenId) !== -1 && this.participant.kwatera.indexOf(chosenId) === -1) {
-      console.log(' stało się.....ok')
       this.forbiddenPlaceInSelectOptionClicked = true;
     }
   }
@@ -207,7 +220,16 @@ export class BrotherComponent implements OnInit, OnDestroy {
       this.store.dispatch(new AccomActions.TakeAccommodation({ accomIndex: value, participant: this.participant}));
       this.store.dispatch(new BroActions.AccommodateParticipant({ accomId: value, currPartId: this.currentParticipantId }));
       } else {
-        this.forbiddenPlaceInSelectOptionClicked = true;
+        if (this.participant.kwatera.indexOf(value) === -1) {
+          this.forbiddenPlaceInSelectOptionClicked = true;
+        } else {
+          this.forbiddenPlaceWithinTheSameParticipantMembersClicked = true;
+          let childAccIds = [...this.participant.kwatera].splice(2, this.participant.kwatera.length);
+          for (let accId of childAccIds) {
+            this.store.dispatch(new AccomActions.FreeAccommodation({index: accId}));
+            this.store.dispatch(new BroActions.DisaccommodateParticipant({accomId: accId, currPartId: this.currentParticipantId}))
+          }
+        }     
       }
     } else {
       if (
@@ -227,6 +249,18 @@ export class BrotherComponent implements OnInit, OnDestroy {
         }
         // console.log('llllllllllllllllllllllllll', this.activeFormControlName);
       };
+    }
+    if (this.exemptedAccommodationsIdsToSetFreeInDB.length !== 0) {
+      let verifiedExemptedAccIdArray:string[] = []; 
+      let exemptedAccsAtTheTimeOfSubmit = this.accommodations.filter(acc => {
+          return this.exemptedAccommodationsIdsToSetFreeInDB.indexOf(acc.id) !== -1;
+      })    
+      for (let acc of exemptedAccsAtTheTimeOfSubmit) {
+        if (!acc.przydzial) {verifiedExemptedAccIdArray.push(acc.id)}
+      }
+      console.log('verified:......................', verifiedExemptedAccIdArray)
+      this.arrayOfHttpExemptingPatchObservables =
+      this.generateArrayOfHttpExemptingPatchObservables(verifiedExemptedAccIdArray);
     }
   }
 
@@ -258,7 +292,6 @@ export class BrotherComponent implements OnInit, OnDestroy {
     for (let control of this.getControls()) {
       arrayOfStringAccUnits.push(control.get('miejsce').value)
     }
-
     let updatedP: Participant;
 
     if (this.editMode) {
@@ -274,68 +307,90 @@ export class BrotherComponent implements OnInit, OnDestroy {
             arrayOfStringAccUnits.push(ctrl.value.miejsceDziecka)
           }
         }
+      } else {
+        arrayOfStringAccUnits = [];
+        arrayOfStringAccUnits.push(this.pForm.value['miejsce']);
       };
-
       updatedP = new Participant(
         this.currentParticipantId,
-        this.pForm.value['wspolnota'],
-        this.pForm.value['imieINazwisko'],
+        this.participant.wspolnota,
+        this.participant.imieINazwisko,
         '',
         arrayOfStringAccUnits,
-        this.pForm.value['prezbiter'],
-        this.pForm.value['malzenstwo'],
-        this.pForm.value['kobieta'],
-        this.pForm.value['mezczyzna'],
-        this.pForm.value['bobas'],
-        this.pForm.value['dziecko'],
-        this.pForm.value['p'],
-        this.pForm.value['nianiaOddzielnie'],
-        this.pForm.value['uwagi'],
-        this.pForm.value['wiek'],
-        this.pForm.value['srodekTransportu'],
-        this.pForm.value['nieobNoc1'],
-        this.pForm.value['nieobNoc1'],
-        this.pForm.value['nieobNoc1'],
+        this.participant.prezbiter,
+        this.participant.malzenstwo,
+        this.participant.kobieta,
+        this.participant.mezczyzna,
+        this.participant.bobas,
+        this.participant.dziecko,
+        this.participant.p,
+        this.participant.nianiaOddzielnie,
+        this.participant.uwagi,
+        this.participant.wiek,
+        this.participant.srodekTransportu,
+        this.participant.nieobNoc1,
+        this.participant.nieobNoc2,
+        this.participant.nieobNoc3,
       );
+
+      // if (this.exemptedAccommodationsIdsToSetFreeInDB.length !== 0) {
+      //   let verifiedExemptedAccIdArray:string[] = []; 
+      //   let exemptedAccsAtTheTimeOfSubmit = this.accommodations.filter(acc => {
+      //       return this.exemptedAccommodationsIdsToSetFreeInDB.indexOf(acc.id) !== -1;
+      //   })    
+      //   for (let acc of exemptedAccsAtTheTimeOfSubmit) {
+      //     if (!acc.przydzial) {verifiedExemptedAccIdArray.push(acc.id)}
+      //   }
+      //   console.log('verified:......................', verifiedExemptedAccIdArray)
+      //   this.arrayOfHttpExemptingPatchObservables =
+      //   this.generateArrayOfHttpExemptingPatchObservables(verifiedExemptedAccIdArray);
+      //   console.log('to są patche  ktor mają zwonić pokoje na submici', this.arrayOfHttpExemptingPatchObservables);
+      // }
+
       let httpBrothersListObservable$ = this.httpClient.patch(
         'http://localhost:3000/listaBraci/' + this.currentParticipantId,
+        // this.restApi + '/listaBraci/' + this.currentParticipantId,
         updatedP,
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+          responseType: 'json',
         }
       );
       let arrayOfHttpAccommodations = this.generateArrayOfHttpPatchObservables();
-      this.httpAccommodationsAndBrothersSubscription = zip(
-        ...arrayOfHttpAccommodations,
-        httpBrothersListObservable$
-        ).subscribe(
-          (data) => console.log('Wysyłam dane do serwera z patcha!', data)
-        );
-
+      let arrayOfHttpAccsAndBrListObsAndExmptPatchObs: Array<Observable<any>> =
+      [...this.arrayOfHttpExemptingPatchObservables, ...arrayOfHttpAccommodations, httpBrothersListObservable$];
+      console.log('jestem tutaj......')
+      console.log('to jest ta nowa tablica: ', arrayOfHttpAccsAndBrListObsAndExmptPatchObs)
+      // let arrayOfHttpRequests = [...arrayOfHttpAccsAndBrListObsAndExmptPatchObs]; 
       if (this.exemptedAccommodationsIdsToSetFreeInDB.length !== 0) {
-        let verifiedExemptedAccIdArray:string[] = [];
-        this.wrappedHttpExemptedAccommodationsSubscription = this.store.select('accommodations_').pipe(
-          map((stateObject) => stateObject.accommodations),
-          map(accommodations => {
-            return accommodations.filter(acc => {
-              return this.exemptedAccommodationsIdsToSetFreeInDB.indexOf(acc.id) !== -1;
-          })}),
-          map((exemptedAccsAtTheTimeOfSubmit: Accommodation[]) => {
-            for (let acc of exemptedAccsAtTheTimeOfSubmit) {
-              if (!acc.przydzial) {verifiedExemptedAccIdArray.push(acc.id)}
-            }
-            return verifiedExemptedAccIdArray;
-          }),
-          tap((verifiedExemptedAccIdArray) => {
-            let arrayOfHttpExemptingPatchObservables = this.generateArrayOfHttpExemptingPatchObservables(verifiedExemptedAccIdArray);
-            this.httpExemptedAccommodationsSubscription = zip(...arrayOfHttpExemptingPatchObservables).subscribe()
-          })
-        ).subscribe();
+        zip(...arrayOfHttpAccsAndBrListObsAndExmptPatchObs).pipe(
+          tap(d => console.log('To jest tużpo zipie: ', d)),
+          map(data => data.reduce((result,arr) => [...result, ...arr], [])),
+          tap(d => console.log('A to jest jeszcze po mapie: ', d)),
+          takeUntil(this.arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubject$)
+        ).subscribe(
+          (data) => {
+            console.log('Wysyłam dane do serwera z patcha!', data);
+            this.router.navigate(['../'], { relativeTo: this.activatedRoute })
+          });
+
+
+      } else {
+        zip(...arrayOfHttpAccsAndBrListObsAndExmptPatchObs).pipe(
+          map(data => data.reduce((result, arr) => [...result, ...arr], [])),
+          takeUntil(this.arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubject$)
+        ).subscribe(
+          (data) => {
+            console.log('Wysyłam dane do serwera z patcha!', data);
+            this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+          }
+        );
       }
 
-      this.router.navigate(['../'], { relativeTo: this.activatedRoute });
     } else {
       // delete updatedP.id;
       // this.httpBrothersListSubscription = this.httpClient.post('http://localhost:3000/listaBraci', updatedP, {
@@ -344,7 +399,7 @@ export class BrotherComponent implements OnInit, OnDestroy {
       //   })
       // })
         // .subscribe();
-      this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+      // this.router.navigate(['../'], { relativeTo: this.activatedRoute });
     }
   }
 
@@ -372,6 +427,7 @@ export class BrotherComponent implements OnInit, OnDestroy {
     let arrayOfHttpPatchObservables: Array<Observable<any>> = [];
     for (let updatedAccId of [...this.participant.kwatera]) {
       let currentUpdatedAccPart = {
+        id: updatedAccId,
         przydzial: 'tak',
         imieINazwisko: this.participant.imieINazwisko,
         wspolnota: this.participant.wspolnota,
@@ -381,11 +437,15 @@ export class BrotherComponent implements OnInit, OnDestroy {
       }
       let httpPatchObs$: Observable<any> = this.httpClient.patch(
         'http://localhost:3000/kwateryBuzuna/' + updatedAccId,
+        // this.restApi + '/kwateryBuzuna/' + updatedAccId,
         currentUpdatedAccPart,
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+          responseType: 'json',
         }
       );
       arrayOfHttpPatchObservables.push(httpPatchObs$);
@@ -398,6 +458,7 @@ export class BrotherComponent implements OnInit, OnDestroy {
     let arrayOfHttpExemptingPatchObservables: Array<Observable<any>> = [];
     for (let id of arrayOfIds) {
       let currentUpdatedAccPart = {
+        id: id,
         przydzial: '',
         imieINazwisko: '',
         wspolnota: '',
@@ -405,13 +466,18 @@ export class BrotherComponent implements OnInit, OnDestroy {
         wolnePrzezNoc2: '',
         wolnePrzezNoc3: '', 
       }
+      console.log('=to jest w parchu to wyczyszczenia zajętości: ', currentUpdatedAccPart)
       let httpPatchObs$: Observable<any> = this.httpClient.patch(
         'http://localhost:3000/kwateryBuzuna/' + id,
+        // this.restApi + '/kwateryBuzuna/' + id,
         currentUpdatedAccPart,
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+          responseType: 'json',
         }
       );
       arrayOfHttpExemptingPatchObservables.push(httpPatchObs$);
@@ -434,23 +500,78 @@ export class BrotherComponent implements OnInit, OnDestroy {
     this.forbiddenPlaceOwner = '';
     let actFormCtrlName: string  = this.activeFormControlName;
     console.log('--------------------------------------------', actFormCtrlName)
-    if (this.participant.dziecko === '') {
-      this.pForm.patchValue({
-        [actFormCtrlName]: null,
-      });
-    } else {
-      this.pForm.patchValue({
-        'dzieciMiejsce': {
-          'miejsceDziecka': null
+    this.pForm.patchValue({
+      [actFormCtrlName]: null,
+    });
+    if (actFormCtrlName = 'miejsceDziecka') {
+      switch (this.participant.dziecko) {
+        case '1': {
+          this.pForm.patchValue({
+            'dzieciMiejsce': [
+              {
+                'miejsceDziecka': null
+              }
+            ]
+          })
         }
-      })
+        case '2': {
+          this.pForm.patchValue({
+            'dzieciMiejsce': [
+              {
+                'miejsceDziecka': null
+              },
+              {
+                'miejsceDziecka': null
+              }
+            ]
+          })
+        }
+        case '3': {
+          this.pForm.patchValue({
+            'dzieciMiejsce': [
+              {
+                'miejsceDziecka': null
+              },
+              {
+                'miejsceDziecka': null
+              },
+              {
+                'miejsceDziecka': null
+              }
+            ]
+          })
+        }
+        case '4': {
+          this.pForm.patchValue({
+            'dzieciMiejsce': [
+              {
+                'miejsceDziecka': null
+              },
+              {
+                'miejsceDziecka': null
+              },
+              {
+                'miejsceDziecka': null
+              },
+              {
+                'miejsceDziecka': null
+              }
+            ]
+          })
+        }
+        default: console.log('sth went wrong in switch brotherComponent.ts')
+      }
+      
     }
+   
     
     this.forbiddenPlaceWithinTheSameParticipantMembersClicked = false;
   }
 
   ngOnDestroy() {
-    if (this.httpAccommodationsAndBrothersSubscription) { this.httpAccommodationsAndBrothersSubscription.unsubscribe() };
+    // if (this.arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubscription) { this.arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubscription.unsubscribe() };
+    this.arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubject$.next();
+    this.arrayOfHttpAccsAndBrListObsAndExmptPatchObsSubject$.complete();
     if (this.httpExemptedAccommodationsSubscription) { this.httpExemptedAccommodationsSubscription.unsubscribe() };
     if (this.wrappedHttpExemptedAccommodationsSubscription) { this.wrappedHttpExemptedAccommodationsSubscription.unsubscribe() };
     if (this.modeSubscription) { this.modeSubscription.unsubscribe() };

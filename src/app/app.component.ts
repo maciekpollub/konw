@@ -1,3 +1,4 @@
+
 import { BrothersService } from './brothers/brothers.service';
 import { Participant } from './models/participant.model';
 import { ExcelService } from './services/excel.service';
@@ -12,7 +13,10 @@ import { Store } from '@ngrx/store';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  title = 'konw';
+  title = 'konw'
+  // emitter = new EventEmitter();
+  
+  
 
   // fileToUpload: File = null;
   // importedParticipants: Participant[];
@@ -21,6 +25,7 @@ export class AppComponent implements OnInit {
     private excelService: ExcelService, 
     private brothersService: BrothersService,
     private store: Store<{brothers_: {participants: Participant[]}}>) {}
+    
 
   // handleFileInput(event: any) {
   //   this.fileToUpload = event.target.files.item(0);

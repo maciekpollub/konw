@@ -1,12 +1,11 @@
 <div class="brothers-list-container">
   <div style="display: flex; justify-content: space-between; align-items: baseline;">
     <h4>Uczestnicy Konwiwencji Regionalnej 2020</h4>
-    <button class="btn btn-success" type="button" (click)="onBackClick()">Back</button>
+    <button class="btn btn-success" type="button" (click)="onBackClick()">Powrót</button>
     <span *ngIf="(elements$ | async)">
       <button class="btn btn-primary" type="button" (click)="onAddParticipant()">Dodaj Uczestnika</button>
     </span>
   </div>
-  
   
     <table 
       mdbTable 

@@ -136,7 +136,7 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
       let takenParticipantKwatera = takenParticipant.kwatera;
       takenParticipant = {
         ...takenParticipant,
-        kwatera: [...takenParticipantKwatera, newAccId]
+        kwatera: [...takenParticipantKwatera, newAccId],
       }
       participantsCopy[takenParticipantNo] = takenParticipant;
       return {
