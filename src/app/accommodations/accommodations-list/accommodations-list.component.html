@@ -1,39 +1,10 @@
-<div class="brothers-list-container" *ngIf="(elements$ | async).length">
-  <div style="display: flex; justify-content: space-between; align-items: baseline;">
-    <h4>Uczestnicy Konwiwencji Regionalnej 2020</h4>
-    <button class="btn btn-success" type="button" (click)="onAccListClick()">Lista kwater</button>
-    <span *ngIf="(elements$ | async)">
-      <button class="btn btn-primary" type="button" (click)="onAddParticipant()">Dodaj Uczestnika</button>
-    </span>
-  </div>
-  <div class="filters-container">
-    <form [formGroup]="filtersForm">
-      <div class="row">
-        <div class="col-1">Filtruj</div>
-        <div class="col-5">
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" id="commName" value="communityName" formControlName="poCzym">
-            <label class="form-check-label" for="commName">nazwa wspólnoty</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" id="partName" value="participantName" formControlName="poCzym">
-            <label class="form-check-label" for="partName">uczestnik</label>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="row">
-            <div class="col-12">
-              <div class="form-group" *ngIf="chosenRadio === 'community'">
-                <input type="text" id="commName" formControlName="wspolnota" class="form-control" (focus)="onFilterFocus($event)">
-              </div>
-              <div class="form-group" *ngIf="chosenRadio === 'participant'">
-                <input type="text" id="partName" formControlName="imieINazwisko" class="form-control" (focus)="onFilterFocus($event)">
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
+<div class="accommodations-list-container">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 10px 0;">
+    <h4>Kwatery u Buzuna</h4>
+   <button class="btn btn-success" type="button" (click)="onPartListClick()">Lista Braci</button>
+    <!-- <span *ngIf="(elements$ | async)"> -->
+      <!-- <button class="btn btn-primary" type="button" (click)="onAddParticipant()">Dodaj Uczestnika</button>
+    </span> --> 
   </div>
   
     <table 
@@ -45,28 +16,29 @@
       bordered="true"
       w-auto
       class="z-depth-1"
-      id="participantsTable">
+      id="accommodationsTable">
       <thead class="indigo white-text">
         <tr>
           <th 
             *ngFor="let head of headElements; let i = index" 
             scope="col"
-            aria-controls="participantsTable"
+            aria-controls="accommodationsTable"
             [mdbTableSort]="(elements$ | async)"
             sortBy="headElements[i]"  
           > {{head}}</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let el of participants; let i = index" (click)="onBrotherClick(i, el)">
+        <!-- <tr *ngFor="let el of (elements$ | async); let i = index" (click)="onBrotherClick(i, el)"> -->
+        <tr *ngFor="let el of (elements$ | async); let i = index">
           <th scope="col">{{i+1}}</th>
-          <td style="white-space: nowrap;">{{el.wspolnota}}</td>
+          <td><span style="white-space: nowrap">{{el.kwatera}} __ m-ce nr {{el.numerLozka}}</span></td>
           <td>
             <div class="row">
               <div class="col-11">
                 {{el.imieINazwisko}}
               </div>
-              <div class="col-1">
+              <!-- <div class="col-1">
                 <a
                   class="trash" 
                   (click)="$event.stopPropagation()" 
@@ -118,12 +90,25 @@
                   </div>
                 </div>
                 </div>
-              </div>
+              </div> -->
             
             </div>
           </td>
           <td>
-            <app-full-accommodation-name [accommodationId]="el.kwatera"></app-full-accommodation-name>
+            <ul>
+              <li *ngIf="!!el.tapczan1Osobowy && +el.tapczan1Osobowy > 0"><span class="acc-detail">tapczan 1-osobowy</span></li>
+              <li *ngIf="!!el.dostawka && +el.dostawka > 0"><span class="acc-detail">dostawione łóżko</span></li>
+              <li *ngIf="!!el.malzenstwo"><span class="acc-detail">małżeństwo</span></li>
+              <li *ngIf="!!el.malzenstwoZDziecmiLubCiaza"><span class="acc-detail">małżeństwo z dziećmi lub ciąża</span></li>
+              <li *ngIf="!!el.prezbiter"><span class="acc-detail">prezbiter</span></li>
+              <li *ngIf="!!el.kobietaClassic"><span class="acc-detail">kobieta 'classic'</span></li>
+              <li *ngIf="!!el.mezczyznaClassic"><span class="acc-detail">mezczyzna 'classic'</span></li>
+              <li *ngIf="!!el.choroba"><span class="acc-detail">choroba</span></li>
+              <li *ngIf="!!el.nianiaOddzielna"><span class="acc-detail">niania oddzielna</span></li>
+              <li *ngIf="!!el.wolnePrzezNoc1"><span class="acc-detail">łóżko wolne przez 1 noc</span></li>
+              <li *ngIf="!!el.wolnePrzezNoc2"><span class="acc-detail">łóżko wolne przez 2 noc</span></li>
+              <li *ngIf="!!el.wolnePrzezNoc3"><span class="acc-detail">łóżko wolne przez 3 noc</span></li>
+            </ul>        
           </td>   
         </tr>
       </tbody>

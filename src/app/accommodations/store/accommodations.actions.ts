@@ -29,8 +29,15 @@ export class FreeAccommodation implements Action {
   constructor(public payload: {index: string}) {}
 }
 
+export const FREE_ACCOMMODATION_ON_DELETE = 'FREE_ACCOMMODATION_ON_DELETE';
+export class FreeAccommodationOnDelete implements Action {
+  readonly type = FREE_ACCOMMODATION_ON_DELETE;
+  constructor(public payload: {index: string}) {}
+}
+
 export type AccommodationsActions =
  LoadAccommodations
 | UpdateAccommodation
 | TakeAccommodation
-| FreeAccommodation;
+| FreeAccommodation
+| FreeAccommodationOnDelete;

@@ -6,6 +6,7 @@ const initialState = {
   participants: [],
   currentParticipantId: null,
   currentKwateraJustBeforeDisaccommodation: null,
+  participantToAdd: new Participant('','','','',[],'','','','','','','','','','','','','','','',''),
 }
 
 export function brothersReducer(state = initialState, action: BroActions.BrothersActions) {
@@ -66,66 +67,117 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
       }
     }
     case BroActions.MARK_FIRST_NIGHT: {
-      let participantsCopy = [...state.participants];
-      let index = state.currentParticipantId;
-      let takenParticipant = participantsCopy.find(p => p.id === index);
-      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      if(+state.currentParticipantId > 0) {
+        let participantsCopy = [...state.participants];
+        let index = state.currentParticipantId;
+        let takenParticipant = participantsCopy.find(p => p.id === index);
+        let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
         takenParticipant = {
           ...takenParticipant,
           nieobNoc1: takenParticipant.nieobNoc1 === 'tak' ? '' : 'tak' 
         }      
-      participantsCopy[takenParticipantNo] = takenParticipant
-      return {
-        ...state,
-        participants: [...participantsCopy]
-      }
+        participantsCopy[takenParticipantNo] = takenParticipant
+        return {
+          ...state,
+          participants: [...participantsCopy]
+        }
+      };
+      if(!!state.participantToAdd.imieINazwisko) {
+        let nieobecnoscNoc1 = state.participantToAdd.nieobNoc1;
+        return {
+          ...state,
+          participantToAdd: {
+            ...state.participantToAdd,
+            nieobNoc1: nieobecnoscNoc1 === 'tak' ? '' : 'tak'
+          }
+        }
+      } 
     }
     case BroActions.MARK_SECOND_NIGHT: {
-      let participantsCopy = [...state.participants];
-      let index = state.currentParticipantId;
-      let takenParticipant = participantsCopy.find(p => p.id === index);
-      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      if(+state.currentParticipantId > 0) {
+        let participantsCopy = [...state.participants];
+        let index = state.currentParticipantId;
+        let takenParticipant = participantsCopy.find(p => p.id === index);
+        let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
         takenParticipant = {
           ...takenParticipant,
           nieobNoc2: takenParticipant.nieobNoc2 === 'tak' ? '' : 'tak' 
         }      
-      participantsCopy[takenParticipantNo] = takenParticipant
-      return {
-        ...state,
-        participants: [...participantsCopy]
+        participantsCopy[takenParticipantNo] = takenParticipant;
+        return {
+          ...state,
+          participants: [...participantsCopy]
+        }
+      };
+      if(!!state.participantToAdd.imieINazwisko) {
+        let nieobecnoscNoc2 = state.participantToAdd.nieobNoc2;
+        return {
+          ...state,
+          participantToAdd: {
+            ...state.participantToAdd,
+            nieobNoc2: nieobecnoscNoc2 === 'tak' ? '' : 'tak'
+          }
+        }
       }
     }
     case BroActions.MARK_THIRD_NIGHT: {
-      let participantsCopy = [...state.participants];
-      let index = state.currentParticipantId;
-      let takenParticipant = participantsCopy.find(p => p.id === index);
-      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      if(+state.currentParticipantId > 0) {
+        let participantsCopy = [...state.participants];
+        let index = state.currentParticipantId;
+        let takenParticipant = participantsCopy.find(p => p.id === index);
+        let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
         takenParticipant = {
           ...takenParticipant,
           nieobNoc3: takenParticipant.nieobNoc3 === 'tak' ? '' : 'tak' 
         }      
-      participantsCopy[takenParticipantNo] = takenParticipant
-      return {
-        ...state,
-        participants: [...participantsCopy]
+        participantsCopy[takenParticipantNo] = takenParticipant
+        return {
+          ...state,
+          participants: [...participantsCopy]
+        }
+      }
+      if(!!state.participantToAdd.imieINazwisko) {
+        let nieobecnoscNoc3 = state.participantToAdd.nieobNoc3;
+        return {
+          ...state,
+          participantToAdd: {
+            ...state.participantToAdd,
+            nieobNoc3: nieobecnoscNoc3 === 'tak' ? '' : 'tak'
+          }
+        }
       }
     }
     case BroActions.MARK_ALL_NIGHTS: {
-      let participantsCopy = [...state.participants];
-      let index = state.currentParticipantId;
-      let takenParticipant = participantsCopy.find(p => p.id === index);
-      let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
-      takenParticipant = {
-        ...takenParticipant,
-        nieobNoc1: '',
-        nieobNoc2: '',
-        nieobNoc3: '',
+      let finalState;
+      if(+state.currentParticipantId > 0) {
+        let participantsCopy = [...state.participants];
+        let index = state.currentParticipantId;
+        let takenParticipant = participantsCopy.find(p => p.id === index);
+        let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+        takenParticipant = {
+          ...takenParticipant,
+          nieobNoc1: '',
+          nieobNoc2: '',
+          nieobNoc3: '',
+        }
+        participantsCopy[takenParticipantNo] = takenParticipant
+        finalState = {
+          ...state,
+          participants: [...participantsCopy]
+        }
+      };
+      if(!!state.participantToAdd.imieINazwisko) {
+        finalState = {
+          ...state,
+          participantToAdd: {
+            ...state.participantToAdd,
+            nieobNoc1: '',
+            nieobNoc2: '',
+            nieobNoc3: '',
+          }
+        }
       }
-      participantsCopy[takenParticipantNo] = takenParticipant
-      return {
-        ...state,
-        participants: [...participantsCopy]
-      }
+      return finalState;
     }
     case BroActions.ACCOMMODATE_PARTICIPANT: {
       let newAccId = action.payload.accomId;
@@ -179,7 +231,8 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
       takenParticipantKwatera.splice(positionOfKwateraToExpell, 1);
       takenParticipant = {
         ...takenParticipant,
-        kwatera: [...takenParticipantKwatera]
+        kwatera: [...takenParticipantKwatera],
+        p: ''
       }
       participantsCopy[takenParticipantNo] = takenParticipant;
       return {
@@ -188,6 +241,151 @@ export function brothersReducer(state = initialState, action: BroActions.Brother
         currentKwateraJustBeforeDisaccommodation: kwateraBeforeDisaccomodation,
       }
     }
+    case BroActions.CHOOSE_NEW_PARTICIPANT_SINGLE_STATUS: {
+      let participantStatus  = action.payload;
+      let basicState = {
+        ...state,
+        participantToAdd: {
+          ...state.participantToAdd,
+          wspolnota: participantStatus.community,
+          imieINazwisko: participantStatus.name,
+          wiek: participantStatus.age,
+          srodekTransportu: participantStatus.meansOfTransport,
+          uwagi: participantStatus.remarks,
+        }
+      };
+      let newState;
+      if (!!participantStatus.presbiter) {
+        newState =  {
+          ...basicState,
+          participantToAdd: {
+            ...basicState.participantToAdd,
+            prezbiter: action.payload.quantity
+          }
+        }
+      } else {
+        if (!!participantStatus.woman) {
+          newState =  {
+            ...basicState,
+            participantToAdd: {
+              ...basicState.participantToAdd,
+              kobieta: action.payload.quantity
+            }
+          }  
+        } else if (!!participantStatus.man) {
+            newState =  {
+              ...basicState,
+              participantToAdd: {
+                ...basicState.participantToAdd,
+                mezczyzna: action.payload.quantity
+              }
+            }
+        } else {
+          newState =  {
+            ...basicState,
+            participantToAdd: {
+              ...basicState.participantToAdd,
+              nianiaOddzielnie: action.payload.quantity
+            }
+          }
+        }
+      }; 
+      return newState;     
+    }
+    case BroActions.ACCOMMODATE_NEW_PARTICIPANT_TO_ADD: {
+      let newAccId = action.payload.accomId;
+      console.log('reducer z akomodacji nowego participanta ...')
+      return {
+        ...state,
+        participantToAdd: {
+          ...state.participantToAdd,
+          kwatera: [...state.participantToAdd.kwatera, newAccId],
+          }
+      };
+    }
+    case BroActions.DISACCOMMODATE_NEW_PARTICIPANT_TO_ADD: {
+      let pastAccId = action.payload.accomId;
+      let brother: Participant = action.payload.brother;
+      let kwateraBeforeDisaccomodation = brother.kwatera;
+      let positionOfKwateraToExpell = brother.kwatera.lastIndexOf(pastAccId);
+      let brotherKwatera = [...brother.kwatera]
+      brotherKwatera.splice(positionOfKwateraToExpell, 1);
+      let brotherAfterDisaccommodation: Participant;
+      brotherAfterDisaccommodation = {
+        ...brother,
+        kwatera: [...brotherKwatera],
+        p: ''
+      }
+      return {
+        ...state,
+        participantToAdd: {
+          ...state.participantToAdd,
+          kwatera: [...brotherKwatera],
+        },
+        currentKwateraJustBeforeDisaccommodation: kwateraBeforeDisaccomodation,
+      }
+    }
+    case BroActions.REACCOMMODATE_NEW_PARTICIPANT_TO_ADD: {
+      let cancelledAccId = action.payload.cancelledAccomId;
+      let newAccId = action.payload.accomId;
+      let brother = action.payload.brother;
+      let positionToReplace = state.currentKwateraJustBeforeDisaccommodation.lastIndexOf(cancelledAccId);
+      let brotherKwatera = [...brother.kwatera];
+      brotherKwatera.splice(positionToReplace, 0, newAccId);
+      brother = {
+        ...brother,
+        kwatera: brotherKwatera,
+      }
+      console.log('po uzupełnieniu arrayka :', [...brotherKwatera])
+      return {
+        ...state,
+        participantToAdd: brother,
+        currentKwateraJustBeforeDisaccommodation: brotherKwatera,
+      }
+    }
+    case BroActions.CLEAR_NEW_PARTICIPANT_TO_ADD_STATE: {
+      return {
+        ...state,
+        participantToAdd: new Participant('','','','',[],'','','','','','','','','','','','','','','',''),
+      }
+    }
+    case BroActions.CHOOSE_NEW_PARTICIPANT_FAMILY_STATUS: {
+      let participantStatus  = action.payload;
+      let basicState = {
+        ...state,
+        participantToAdd: {
+          ...state.participantToAdd,
+          wspolnota: participantStatus.community,
+          imieINazwisko: participantStatus.name,
+          srodekTransportu: participantStatus.meansOfTransport,
+          uwagi: participantStatus.remarks,
+        }
+      };
+      let newState = {
+        ...basicState,
+        participantToAdd: {
+          ...basicState.participantToAdd,
+          malzenstwo: action.payload.marriageQty,
+          bobas: action.payload.babyQty,
+          dziecko: action.payload.childrenQty
+        }
+      }
+      return newState;     
+    }
+
+      // let participantsCopy = [...state.participants];
+      // let takenParticipant = participantsCopy.find(p => p.id === currPartId);
+      // let takenParticipantNo = participantsCopy.indexOf(takenParticipant);
+      // let takenParticipantKwatera = takenParticipant.kwatera;
+      // takenParticipant = {
+      //   ...takenParticipant,
+      //   kwatera: [...takenParticipantKwatera, newAccId],
+      // }
+      // participantsCopy[takenParticipantNo] = takenParticipant;
+      // return {
+      //   ...state,
+      //   participants: [...participantsCopy]
+      // }
       
     default:
       return state;

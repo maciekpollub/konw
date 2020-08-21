@@ -1,6 +1,5 @@
-<div class="brother-container" *ngIf="(participant$ | async) || editMode === false">
-  <div class="brother-header">
-    <h3 *ngIf="editMode === true; else brotherHeaderForNonEditMode">{{participant.imieINazwisko}}</h3>
+<div *ngIf = "(accommodations$ | async).length" class="brother-container">
+  <div class="brother-header">    <h3 *ngIf="(participant$ | async) && editMode === true; else brotherHeaderForNonEditMode">{{participant.imieINazwisko}}</h3>
     <ng-template #brotherHeaderForNonEditMode>
       <h3>Wpisz dane nowego uczestnika</h3>
     </ng-template>
@@ -23,20 +22,231 @@
         </div>
       </div>
 
-      <div *ngIf="participant && (participant.malzenstwo === '2' 
-                  || (!!participant.dziecko && (!!participant.kobieta || !!participant.mezczyzna))); else singiel">
+      <div *ngIf="participant">
+        <div *ngIf="participant.malzenstwo == '2' ||
+                  (!!participant.dziecko && (!!participant.kobieta || !!participant.mezczyzna)); else singiel">
+          <div class="row">
+            <div class="col-12">
+              <div class="row" style="padding: 20px 0;">
+                <p style="font-weight: bold; margin: 0;" class="col-7">Miejsca zakwaterowania (kolejne noce):</p>
+                <div class="col-5" style="display: flex; align-items: center; justify-content: flex-end;">
+                  <app-nights [participant]="participant"></app-nights>
+                </div>
+              </div>
+
+              <div *ngIf="participant.malzenstwo == '2'">
+                <div class="row form-group" style="display: flex; align-items: center;">
+                  <label for="husband-allocation" class="col-2">{{participant.mazImie}}</label>
+                  <select type="text" id="husband-allocation" formControlName="mazMiejsce" class="form-control col-7"
+                    (mousemove)="onAccSelectOptionMousemove($event)"
+                    (click)="onForeignPlaceClick($event)"
+                    (change)="onAccSelectOptionChange($event)"
+                    (focus)="onFocus($event)"
+                    >
+                    <option  
+                      *ngFor="let accommodation of accommodations; let i = index"
+                      [value]="accommodation.id"
+                      [ngStyle]="{
+                        color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
+                        fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
+                      }"
+                      >   
+                      <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                    </option>
+                  </select>
+                  <span *ngIf="participant.p === 'tak'" 
+                        class="free-accommodation" 
+                        #unlockHusband
+                        (click)="onForceAccExemptionClick(this.pForm.get('mazMiejsce').value, 'unlockHusbandIcon')">
+                        <i class="fas fa-unlock"></i>
+                  </span>
+                </div>
+                <div class="row form-group" style="display: flex; align-items: center;">
+                  <label for="wife-allocation" class="col-2">{{participant.zonaImie}}</label>
+                  <select type="text" id="wife-allocation" formControlName="zonaMiejsce" class="form-control col-7"
+                    (mousemove)="onAccSelectOptionMousemove($event)"
+                    (click)="onForeignPlaceClick($event)"
+                    (change)="onAccSelectOptionChange($event)"
+                    (focus)="onFocus($event)"
+                    >
+                    <option  
+                      *ngFor="let accommodation of accommodations; let i = index"
+                      [value]="accommodation.id"
+                      [ngStyle]="{
+                        color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
+                        fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
+                      }">   
+                      <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                    </option>
+                  </select>
+                  <span *ngIf="participant.p === 'tak'" 
+                        class="free-accommodation" 
+                        #unlockWife
+                        (click)="onForceAccExemptionClick(this.pForm.get('zonaMiejsce').value, 'unlockWifeIcon')">
+                        <i class="fas fa-unlock"></i>
+                  </span>
+                </div>
+              </div>
+              
+              <div *ngIf="!!participant.kobieta || !!participant.mezczyzna">
+                <div class="row form-group" style="display: flex; align-items: center;">
+                  <label for="parent-allocation" class="col-2">{{participant.imieINazwisko | nameOfSingle}}</label>
+                  <select type="text" id="parent-allocation" formControlName="miejsce" class="form-control col-7"
+                    (mousemove)="onAccSelectOptionMousemove($event)"
+                    (click)="onForeignPlaceClick($event)"
+                    (change)="onAccSelectOptionChange($event)"
+                    (focus)="onFocus($event)"
+                  >
+                    <option  
+                      *ngFor="let accommodation of accommodations; let i = index"
+                      [value]="accommodation.id"
+                      [ngStyle]="{
+                        color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
+                        fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
+                      }">   
+                      <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                    </option>
+                  </select>
+                  <span class="free-accommoadtion">zwolnij kwaterę</span>
+                </div>
+              </div>
+              
+              <div *ngIf="participant.dziecko">  
+                <div class="row">
+                  <div class="col-12" formArrayName="dzieciMiejsce">
+                    <div 
+                      class="row" 
+                      style="display: flex; align-items: center; margin-bottom: 15px;" 
+                      *ngFor="let accChildUnitCtrl of getChildrenControls(); let i = index" 
+                      [formGroupName]="i">
+                        <label for="i" class="col-2">Dziecko {{i+1}}</label>
+                        <select type="text" id="i" formControlName="miejsceDziecka" class="form-control col-7"
+                          (mousemove)="onAccSelectOptionMousemove($event)"
+                          (click)="onForeignPlaceClick($event)"
+                          (change)="onAccSelectOptionChange($event)"
+                          (focus)="onFocus($event)"
+                        >    
+                          <option  
+                            *ngFor="let accommodation of accommodations; let i = index"
+                            [value]="accommodation.id"
+                            [ngStyle]="{
+                              color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
+                              fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
+                            }">   
+                            <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                          </option>
+                        </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+          
+        <ng-template #singiel>
+          <div class="row">
+            <div class="col-12">
+              <div class="row" style="padding: 20px 0;">
+                <p style="font-weight: bold; margin: 0;" class="col-7">Miejsce zakwaterowania (kolejne noce):</p>
+                <div class="col-5" style="display: flex; align-items: center; justify-content: flex-end;">
+                  <app-nights [participant]="participant"></app-nights>
+                </div>
+              </div>
+              <div class="row form-group" style="display: flex; align-items: center;">
+                  <label for="allocation" class="col-2">{{participant.imieINazwisko | nameOfSingle}}</label>
+                  <select type="text" id="allocation" formControlName="miejsce" class="form-control col-7"
+                    (mousemove)="onAccSelectOptionMousemove($event)"
+                    (click)="onForeignPlaceClick($event)"
+                    (change)="onAccSelectOptionChange($event)"
+                    (focus)="onFocus($event)"  
+                  >
+                    <option  
+                      *ngFor="let accommodation of accommodations; let i = index"
+                      [value]="accommodation.id"
+                      [ngStyle]="{
+                        color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
+                        fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
+                      }"
+                      >   
+                      <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                    </option>
+                  </select>
+                  <span *ngIf="participant.p === 'tak'" 
+                        class="free-accommodation" 
+                        #unlock
+                        (click)="onForceAccExemptionClick(this.pForm.get('miejsce').value, 'unlockSingleIcon')">
+                        <i class="fas fa-unlock"></i>
+                  </span>    
+              </div>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="row justify-content-end">
+          <div class="col-2">
+            <div class="form-group">
+              <label for="p">P</label>
+              <input type="text" id="p" class="form-control" formControlName="p">
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      <div *ngIf="newParticipantIsOnTheWay">
+        <div class="row">
+          <div class="col-12">
+            <div class="row" style="padding: 20px 0;">
+              <p style="font-weight: bold; margin: 0;" class="col-7">Miejsce zakwaterowania (kolejne noce):</p>
+              <div class="col-5" style="display: flex; align-items: center; justify-content: flex-end;">
+                <app-nights [participant]="newParticipantOnTheWay"></app-nights>
+              </div>
+            </div>
+            <div class="row form-group" style="display: flex; align-items: center;">
+                <label for="allocation" class="col-2">{{newPartToAddName | nameOfSingle}}</label>
+                <select type="text" id="allocation" formControlName="miejsce" class="form-control col-7"
+                  (mousemove)="onAccSelectOptionMousemove($event)"
+                  (click)="onForeignPlaceClick($event)"
+                  (change)="onAccSelectOptionChange($event)"
+                  (focus)="onFocus($event)"  
+            >
+                  <option  
+                    *ngFor="let accommodation of accommodations; let i = index"
+                    [value]="accommodation.id"
+                    [ngStyle]="{
+                      color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
+                      fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
+                    }"
+                    >   
+                    <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                  </option>
+                </select>    
+            </div>
+          </div>  
+        </div>
+        <div class="row justify-content-end">
+          <div class="col-2">
+            <div class="form-group">
+              <label for="p">P</label>
+              <input type="text" id="p" class="form-control" formControlName="p">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="newParticipantsAreOnTheWay">
         <div class="row">
           <div class="col-12">
             <div class="row" style="padding: 20px 0;">
               <p style="font-weight: bold; margin: 0;" class="col-7">Miejsca zakwaterowania (kolejne noce):</p>
               <div class="col-5" style="display: flex; align-items: center; justify-content: flex-end;">
-                <app-nights [participant]="participant"></app-nights>
+                <app-nights [participant]="newParticipantOnTheWay"></app-nights>
               </div>
             </div>
-
-            <div *ngIf="participant.malzenstwo ==='2'">
+            <div *ngIf="newParticipantOnTheWay.malzenstwo == '2'">
               <div class="row form-group" style="display: flex; align-items: center;">
-                <label for="husband-allocation" class="col-2">{{participant.mazImie}}</label>
+                <label for="husband-allocation" class="col-2">{{newPartToAddHusbandName}}</label>
                 <select type="text" id="husband-allocation" formControlName="mazMiejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
                   (click)="onForeignPlaceClick($event)"
@@ -44,7 +254,7 @@
                   (focus)="onFocus($event)"
                   >
                   <option  
-                    *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                    *ngFor="let accommodation of accommodations; let i = index"
                     [value]="accommodation.id"
                     [ngStyle]="{
                       color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
@@ -56,7 +266,7 @@
                 </select>
               </div>
               <div class="row form-group" style="display: flex; align-items: center;">
-                <label for="wife-allocation" class="col-2">{{participant.zonaImie}}</label>
+                <label for="wife-allocation" class="col-2">{{newPartToAddWifeName}}</label>
                 <select type="text" id="wife-allocation" formControlName="zonaMiejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
                   (click)="onForeignPlaceClick($event)"
@@ -64,7 +274,7 @@
                   (focus)="onFocus($event)"
                   >
                   <option  
-                    *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                    *ngFor="let accommodation of accommodations; let i = index"
                     [value]="accommodation.id"
                     [ngStyle]="{
                       color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
@@ -75,30 +285,29 @@
                 </select>
               </div>
             </div>
-            
-            <div *ngIf="!!participant.kobieta || !!participant.mezczyzna">
+            <div *ngIf="newParticipantOnTheWay.malzenstwo == '1'">
               <div class="row form-group" style="display: flex; align-items: center;">
-                <label for="parent-allocation" class="col-2">{{participant.imieINazwisko | nameOfSingle}}</label>
-                <select type="text" id="parent-allocation" formControlName="miejsce" class="form-control col-7"
+                <label for="husband-allocation" class="col-2">{{newPartToAddHusbandName}}</label>
+                <select type="text" id="husband-allocation" formControlName="mazMiejsce" class="form-control col-7"
                   (mousemove)="onAccSelectOptionMousemove($event)"
                   (click)="onForeignPlaceClick($event)"
                   (change)="onAccSelectOptionChange($event)"
                   (focus)="onFocus($event)"
-                >
+                  >
                   <option  
-                    *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                    *ngFor="let accommodation of accommodations; let i = index"
                     [value]="accommodation.id"
                     [ngStyle]="{
                       color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
                       fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
-                    }">   
+                    }"
+                    >   
                     <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
                   </option>
                 </select>
               </div>
             </div>
-            
-            <div *ngIf="participant.dziecko">  
+            <div *ngIf="!!newParticipantOnTheWay.dziecko">  
               <div class="row">
                 <div class="col-12" formArrayName="dzieciMiejsce">
                   <div 
@@ -114,7 +323,7 @@
                         (focus)="onFocus($event)"
                       >    
                         <option  
-                          *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                          *ngFor="let accommodation of accommodations; let i = index"
                           [value]="accommodation.id"
                           [ngStyle]="{
                             color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
@@ -126,119 +335,25 @@
                   </div>
                 </div>
               </div>
+            </div>  
+          </div>  
+        </div>
+        <div class="row justify-content-end">
+          <div class="col-2">
+            <div class="form-group">
+              <label for="p">P</label>
+              <input type="text" id="p" class="form-control" formControlName="p">
             </div>
-
           </div>
         </div>
       </div>
-      <ng-template #singiel>
-        <div class="row">
-          <div class="col-12">
-            <div class="row" style="padding: 20px 0;">
-              <p style="font-weight: bold; margin: 0;" class="col-7">Miejsce zakwaterowania (kolejne noce):</p>
-              <div class="col-5" style="display: flex; align-items: center; justify-content: flex-end;">
-                <app-nights [participant]="participant"></app-nights>
-              </div>
-            </div>
-            <div class="row form-group" style="display: flex; align-items: center;">
-                <label for="allocation" class="col-2">{{participant.imieINazwisko | nameOfSingle}}</label>
-                <select type="text" id="allocation" formControlName="miejsce" class="form-control col-7"
-                  (mousemove)="onAccSelectOptionMousemove($event)"
-                  (click)="onForeignPlaceClick($event)"
-                  (change)="onAccSelectOptionChange($event)"
-                  (focus)="onFocus($event)"  
-                >
-                  <option  
-                    *ngFor="let accommodation of (accommodations$ | async); let i = index"
-                    [value]="accommodation.id"
-                    [ngStyle]="{
-                      color: !!accommodation.przydzial ? '#6e6e6e' : 'black',
-                      fontWeight: !!accommodation.przydzial ? 'normal' : 'bold'
-                    }"
-                    >   
-                    <p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
-                  </option>
-                </select>    
-            </div>
-          </div>
-        </div>
-      </ng-template>
       
-      <hr>
+        
+      
+            
+      <hr style="border-top: 3px solid black">
 
-      <div class="row"> 
-        <div class="col-12" formArrayName="kwatera">
-          <!-- <div class="row" *ngFor="let accUnitCtrl of getControls(); let i = index" [formGroupName]="i">
-            <div class="col-10">
-                <select type="text" id="allocation" formControlName="miejsce" class="form-control"
-                (change)="onAccSelectOptionChange($event)">
-                  <option  
-                    *ngFor="let accommodation of (accommodations$ | async); let i = index"
-                    [value]="accommodation.id"
-                    [ngStyle]="{color: !!accommodation.przydzial ? 'red' : 'blue'}"   
-                  ><p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
-                  </option>
-                </select> 
-            </div>
-            <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
-              <a class="trash" (click)="onDeleteAccommodationUnit(i)">
-                <span >
-                  <mdb-icon fas icon="trash"></mdb-icon>
-                </span>
-              </a>
-            </div>
-          </div> -->
-          
-          <hr>
-          <!-- <div class="row">
-            <div class="col-12">
-              <button type="button" class="btn btn-primary btn-sm" (click)="onAddAccommodationUnit()">Dodaj zakwaterowanie</button>
-            </div>
-          </div> -->
-
-
-          <hr>
-          
-
-          <!-- <div class="form-group">
-            <label for="allocation">Zakwaterowanie</label>
-            <select type="text" id="allocation" formControlName="kwatera" class="form-control">
-              <option 
-                *ngFor="let accommodation of (accommodations$ | async); let i = index"
-                value="accommodation.kwatera"  
-              ><p>{{accommodation.kwatera}}  ___  miejsce nr {{availableBedsNumbers[i]}}</p></option>
-            </select>
-          </div> -->
-        </div>
-        <!-- <div class="col-2"> -->
-          <!-- <div class="form-group">
-            <label for="allocated">...dokonane</label>
-            <select *ngIf="editMode === true; else allocatedSelectForNonEditMode " name="allocated" id="allocated" class="form-control">
-              <option value="Tak" [selected]="(brother$ | async).allocated" >Tak</option>
-              <option value="Nie" [selected]="!(brother$ | async).allocated">Nie</option>
-            </select>
-            <ng-template #allocatedSelectForNonEditMode>
-              <select name="allocated" id="allocated" class="form-control">
-                <option value="Tak">Tak</option>
-                <option value="Nie" selected>Nie</option>
-              </select>
-            </ng-template>
-          </div> -->
-        <!-- </div> -->
-        <!-- <div class="col-2">
-          <div class="form-group">
-            <label for="no">Nr</label>
-            <input type="number" id="no" class="form-control" formControlName="id">
-          </div>
-        </div> -->
-        <div class="col-2">
-          <div class="form-group">
-            <label for="p">P</label>
-            <input type="text" id="p" class="form-control" formControlName="p">
-          </div>
-        </div>
-
-      </div>
+      
       <div class="row">
         <div class="col-3">
           <div class="form-group">
@@ -246,8 +361,6 @@
             <input type="number" id="presQty" formControlName="prezbiter" class="form-control">
           </div>
         </div>
-      </div>
-      <div class="row">
         <div class="col-3">
           <div class="form-group">
             <label for="womQty">Kobieta#</label>
@@ -315,11 +428,89 @@
           </div>
         </div>
       </div>
+      
+      
+      <div class="row"> 
+        <div class="col-12" formArrayName="kwatera">
+          <!-- <div class="row" *ngFor="let accUnitCtrl of getControls(); let i = index" [formGroupName]="i">
+            <div class="col-10">
+                <select type="text" id="allocation" formControlName="miejsce" class="form-control"
+                (change)="onAccSelectOptionChange($event)">
+                  <option  
+                    *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                    [value]="accommodation.id"
+                    [ngStyle]="{color: !!accommodation.przydzial ? 'red' : 'blue'}"   
+                  ><p>{{accommodation.kwatera}}  ___  miejsce nr {{accommodation.numerLozka}}</p>
+                  </option>
+                </select> 
+            </div>
+            <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
+              <a class="trash" (click)="onDeleteAccommodationUnit(i)">
+                <span >
+                  <mdb-icon fas icon="trash"></mdb-icon>
+                </span>
+              </a>
+            </div>
+          </div> -->
+          
+          <hr>
+          <!-- <div class="row">
+            <div class="col-12">
+              <button type="button" class="btn btn-primary btn-sm" (click)="onAddAccommodationUnit()">Dodaj zakwaterowanie</button>
+            </div>
+          </div> -->
+
+
+          <hr>
+          
+
+          <!-- <div class="form-group">
+            <label for="allocation">Zakwaterowanie</label>
+            <select type="text" id="allocation" formControlName="kwatera" class="form-control">
+              <option 
+                *ngFor="let accommodation of (accommodations$ | async); let i = index"
+                value="accommodation.kwatera"  
+              ><p>{{accommodation.kwatera}}  ___  miejsce nr {{availableBedsNumbers[i]}}</p></option>
+            </select>
+          </div> -->
+        </div>
+        <!-- <div class="col-2"> -->
+          <!-- <div class="form-group">
+            <label for="allocated">...dokonane</label>
+            <select *ngIf="editMode === true; else allocatedSelectForNonEditMode " name="allocated" id="allocated" class="form-control">
+              <option value="Tak" [selected]="(brother$ | async).allocated" >Tak</option>
+              <option value="Nie" [selected]="!(brother$ | async).allocated">Nie</option>
+            </select>
+            <ng-template #allocatedSelectForNonEditMode>
+              <select name="allocated" id="allocated" class="form-control">
+                <option value="Tak">Tak</option>
+                <option value="Nie" selected>Nie</option>
+              </select>
+            </ng-template>
+          </div> -->
+        <!-- </div> -->
+        <!-- <div class="col-2">
+          <div class="form-group">
+            <label for="no">Nr</label>
+            <input type="number" id="no" class="form-control" formControlName="id">
+          </div>
+        </div> -->
+        
+
+      </div>
+      
+      
+      
+      
       <div class="row justify-content-center">
         <div class="col-8">
-          <button class="btn btn-success" type="submit" style="width: 100%;">Zapisz</button>
+          <button class="btn btn-success" type="submit" style="width: 100%;">
+            <span *ngIf="editMode; else dodaj">Zapisz</span>
+            <ng-template #dodaj>Dodaj</ng-template>
+          </button>
         </div>
       </div>
+    
     </form>
   </div>
 </div>

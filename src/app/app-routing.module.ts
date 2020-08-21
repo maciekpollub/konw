@@ -1,3 +1,4 @@
+import { AccommodationsListComponent } from './accommodations/accommodations-list/accommodations-list.component';
 import { BrotherComponent } from './brothers/brothers-list/brother/brother.component';
 import { NoFileChosenComponent } from './brothers/no-file-chosen/no-file-chosen.component';
 import { NgModule } from '@angular/core';
@@ -14,6 +15,7 @@ const routes: Routes = [
   },
   {path: 'brothers/:id', component: BrotherComponent},
   {path: 'brothers/:new', component: BrotherComponent},
+  {path: 'accommodations', component: AccommodationsListComponent}
 ];
 
 @NgModule({

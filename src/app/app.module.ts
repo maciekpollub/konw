@@ -19,6 +19,7 @@ import { NightsComponent } from './brothers/brothers-list/brother/nights/nights.
 import { NameOfSinglePipe } from './brothers/pipes/name-of-single.pipe';
 import { FullAccommodationNameComponent } from './brothers/brothers-list/brother/full-accommodation-name/full-accommodation-name.component';
 import { ModalComponent } from './shared/modal/modal.component';
+import { AccommodationsListComponent } from './accommodations/accommodations-list/accommodations-list.component';
 
 
 @NgModule({
@@ -33,6 +34,7 @@ import { ModalComponent } from './shared/modal/modal.component';
     NameOfSinglePipe,
     FullAccommodationNameComponent,
     ModalComponent,
+    AccommodationsListComponent,
   ],
   imports: [
     BrowserModule,

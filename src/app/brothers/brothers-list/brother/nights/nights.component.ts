@@ -18,8 +18,14 @@ export class NightsComponent implements OnInit {
   constructor(
     @Host() private parentFor: FormGroupDirective, 
     private store: Store<{
-      brothers_: {participants: Participant[], currentParticipantId: string | number},
-      accommodations_: {accommodations: Accommodation[]}}>) { }
+      brothers_: { 
+        participants: Participant[],
+        currentParticipantId: string | number,
+        currentKwateraJustBeforeDisaccommodation: string[] | string,
+        participantToAdd: Participant,  
+      },
+      accommodations_: { accommodations: Accommodation[] }
+    }>) { }
 
   ngOnInit(): void {
     this.form = this.parentFor.form;
@@ -45,6 +51,7 @@ export class NightsComponent implements OnInit {
     event.stopPropagation();
     this.inputs.forEach(input => input.nativeElement.checked = true)
     this.store.dispatch(new BroActions.MarkAllNights())
+    this.store.select('brothers_').subscribe(d => console.log(d.participantToAdd))
   }
 
 }

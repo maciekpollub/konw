@@ -74,6 +74,62 @@ export class DisaccommodateParticipant implements Action {
   constructor(public payload: {accomId: string, currPartId: string | number}) {}
 }
 
+export const CHOOSE_NEW_PARTICIPANT_SINGLE_STATUS = 'CHOOSE_NEW_PARTICIPANT_SINGLE_STATUS';
+export class ChooseNewParticipantSingleStatus implements Action {
+  readonly type = CHOOSE_NEW_PARTICIPANT_SINGLE_STATUS;
+  constructor(public payload: 
+    {
+      presbiter: boolean,
+      woman: boolean,
+      man: boolean,
+      separateNanny: boolean,
+      quantity: string,
+      community: string,
+      name: string,
+      age: string,
+      meansOfTransport: string,
+      remarks: string
+    }) {}
+}
+
+export const ACCOMMODATE_NEW_PARTICIPANT_TO_ADD = 'ACCOMMODATE_NEW_PARTICIPANT_TO_ADD';
+export class AccommodateNewParticipantToAdd implements Action {
+  readonly type = ACCOMMODATE_NEW_PARTICIPANT_TO_ADD;
+  constructor(public payload: {accomId: string}) {}
+}
+
+export const DISACCOMMODATE_NEW_PARTICIPANT_TO_ADD = 'DISACCOMMODATE_NEW_PARTICIPANT_TO_ADD';
+export class DisaccommodateNewParticipantToAdd implements Action {
+  readonly type = DISACCOMMODATE_NEW_PARTICIPANT_TO_ADD;
+  constructor(public payload: {accomId: string, brother: Participant}) {}
+}
+
+export const REACCOMMODATE_NEW_PARTICIPANT_TO_ADD = 'REACCOMMODATE_NEW_PARTICIPANT_TO_ADD';
+export class ReaccommodateNewParticipantToAdd implements Action {
+  readonly type = REACCOMMODATE_NEW_PARTICIPANT_TO_ADD;
+  constructor(public payload: {cancelledAccomId: string, accomId: string, brother: Participant}) {}
+}
+
+export const CLEAR_NEW_PARTICIPANT_TO_ADD_STATE = 'CLEAR_NEW_PARTICIPANT_TO_ADD_STATE';
+export class ClearNewParticipantToAddState implements Action {
+  readonly type = CLEAR_NEW_PARTICIPANT_TO_ADD_STATE;
+}
+
+export const CHOOSE_NEW_PARTICIPANT_FAMILY_STATUS = 'CHOOSE_NEW_PARTICIPANT_FAMILY_STATUS';
+export class ChooseNewParticipantFamilyStatus implements Action {
+  readonly type = CHOOSE_NEW_PARTICIPANT_FAMILY_STATUS;
+  constructor(public payload: 
+    {
+      marriageQty: string,
+      babyQty: string,
+      childrenQty: string,
+      community: string,
+      name: string,
+      meansOfTransport: string,
+      remarks: string
+    }) {}
+}
+
 export type BrothersActions =
     LoadParticipants
   | EditParticipant
@@ -86,4 +142,10 @@ export type BrothersActions =
   | MarkThirdNight
   | AccommodateParticipant
   | ReaccommodateParticipant
-  | DisaccommodateParticipant;
+  | DisaccommodateParticipant
+  | ChooseNewParticipantSingleStatus
+  | AccommodateNewParticipantToAdd
+  | DisaccommodateNewParticipantToAdd
+  | ReaccommodateNewParticipantToAdd
+  | ClearNewParticipantToAddState
+  | ChooseNewParticipantFamilyStatus;
