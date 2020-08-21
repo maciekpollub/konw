@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    // "start": "ng serve",
+    "start": "node main.ts",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
@@ -28,6 +29,7 @@
     "bootstrap": "^4.5.0",
     "chart.js": "^2.5.0",
     "hammerjs": "^2.0.8",
+    "heroku": "^7.42.8",
     "jquery": "^3.5.1",
     "popper.js": "^1.14.3",
     "rxjs": "~6.5.4",
