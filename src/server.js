@@ -4,7 +4,7 @@ const app = express();
 
 app.use(express.static(__dirname + '/dist/konw'));
 
-app.post('/*', function(req, res) {
+app.get('/*', function(req, res) {
   res.sendFile(__dirname, './dist/konw/index.html');
 });
 
